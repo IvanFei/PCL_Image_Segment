@@ -6,7 +6,7 @@ pandas
 tqdm
 pillow
 easydict
-opencv-python
+opencv-python==4.2.0.34
 matplotlib
 scikit-image==0.15.0
 albumentations
