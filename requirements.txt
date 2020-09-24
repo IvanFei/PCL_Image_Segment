@@ -4,7 +4,7 @@ pandas==0.24.2
 tqdm==4.32.1
 pillow==7.2.0
 easydict==1.9
-opencv-python-headless==4.2.0.34
+opencv-python==4.1.2.30
 scikit-image==0.15.0
 albumentations
 
