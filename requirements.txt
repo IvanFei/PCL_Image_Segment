@@ -1,13 +1,10 @@
-numpy
-torch
-torchvision
-tensorboardx
-pandas
-tqdm
-pillow
-easydict
+numpy==1.19.1
+tensorboardX==1.8
+pandas==0.24.2
+tqdm==4.32.1
+pillow==7.2.0
+easydict==1.9
 opencv-python-headless==4.2.0.34
-matplotlib
 scikit-image==0.15.0
 albumentations
 
