@@ -1,0 +1,13 @@
+numpy
+torch
+torchvision
+tensorboardx
+pandas
+tqdm
+pillow
+easydict
+opencv-python
+matplotlib
+scikit-image==0.15.0
+albumentations
+
