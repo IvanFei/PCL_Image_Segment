@@ -115,8 +115,8 @@ def write_mask(args, masks, img_names, save_dir="prediction"):
     for i in range(batch_size):
         img_name = img_names[i]
         mask = masks[i]
-        seg = np.zeros([H, W])
-        for c in range(cfg.DATASET.NUM_CLASSES):
+        seg = np.zeros([H, W]) * cfg.DATASET.IGNORE_LABEL
+        for c in range(cfg.DATASET.TRAINID_TO_ID.keys()):
             seg[mask == c] = cfg.DATASET.TRAINID_TO_ID[c]
 
         save_mask =seg.astype(np.uint16)
