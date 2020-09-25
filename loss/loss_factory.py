@@ -6,6 +6,7 @@ import torch.nn.functional as F
 
 from config import cfg
 from loss.rmi import RMILoss
+from utils.utils import get_class_weight
 
 
 def get_loss(args, cuda=False):
@@ -22,6 +23,12 @@ def get_loss(args, cuda=False):
     elif args.loss_type == "rmi":
         criterion = RMILoss(num_classes=cfg.DATASET.NUM_CLASSES,
                             ignore_index=cfg.DATASET.IGNORE_LABEL)
+    elif args.loss_type == "sce":
+        weights = get_class_weight()
+        weights = torch.from_numpy(weights).float()
+        if cuda:
+            weights = weights.cuda()
+        criterion = SymmetricCrossEntropyLoss2d(weights=weights, ignore_index=cfg.DATASET.IGNORE_LABEL)
     else:
         raise NotImplementedError("[*] loss {} is not implement.".format(args.loss_type))
 
@@ -44,6 +51,42 @@ class CrossEntropyLoss2d(nn.Module):
 
     def forward(self, inputs, targets, **kwargs):
         return self.nll_loss(F.log_softmax(inputs, dim=1), targets)
+
+
+class SymmetricCrossEntropyLoss2d(nn.Module):
+    """
+    Symmetric Cross Entropy Loss
+    """
+    def __init__(self, alpha=0.5, beta=0.6, weights=None, ignore_index=cfg.DATASET.IGNORE_LABEL):
+        super(SymmetricCrossEntropyLoss2d, self).__init__()
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.alpha = alpha
+        self.beta = beta
+        self.cross_entropy = nn.CrossEntropyLoss(weight=weights, ignore_index=ignore_index)
+
+    def forward(self, inputs, targets, **kwargs):
+
+        if targets.dim() >= 2:
+            targets = targets.squeeze().long()
+        else:
+            targets = targets.long()
+
+        # CCE
+        ce = self.cross_entropy(inputs, targets)
+
+        # RCE
+        pred = F.softmax(inputs, dim=1)
+        pred = torch.clamp(pred, min=1e-7, max=1.0)
+        if not pred.is_cuda:
+            pred = pred.to(self.device)
+        label_one_hot = F.one_hot(targets, cfg.DATASET.NUM_CLASSES).float().to(self.device)
+        label_one_hot = torch.clamp(label_one_hot, min=1e-4, max=1.0)
+        rce = (-1 * torch.sum(pred * torch.log(label_one_hot), dim=1))
+
+        # Loss
+        loss = self.alpha * ce + self.beta * rce.mean()
+
+        return loss
 
 
 class ImageBasedCrossEntropyLoss2d(nn.Module):

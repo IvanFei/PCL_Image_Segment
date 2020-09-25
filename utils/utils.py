@@ -116,7 +116,7 @@ def write_mask(args, masks, img_names, save_dir="prediction"):
         img_name = img_names[i]
         mask = masks[i]
         seg = np.zeros([H, W]) * cfg.DATASET.IGNORE_LABEL
-        for c in range(cfg.DATASET.TRAINID_TO_ID.keys()):
+        for c in cfg.DATASET.TRAINID_TO_ID.keys():
             seg[mask == c] = cfg.DATASET.TRAINID_TO_ID[c]
 
         save_mask =seg.astype(np.uint16)
@@ -124,3 +124,15 @@ def write_mask(args, masks, img_names, save_dir="prediction"):
         cv2.imwrite(os.path.join(res_dir, img_name + ".png"), save_mask)
 
 
+def get_class_weight():
+    logger.info("[*] Loaded the class weights.")
+    pixel_dist = [701430751,  405558880, 1210162677, 1097775645,  561645880, 1021073281,  337966950, 1217985936]
+    pixel_dist = np.array(pixel_dist)
+    weights = pixel_dist.sum() / (cfg.DATASET.NUM_CLASSES * pixel_dist)
+
+    return weights
+
+
+if __name__ == '__main__':
+    weights = get_class_weight()
+    print(weights)
