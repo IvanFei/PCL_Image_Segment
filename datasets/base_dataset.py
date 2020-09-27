@@ -11,6 +11,7 @@ from torch.utils import data
 from config import cfg
 # from runx.logx import logx
 import torchvision.transforms as ttf
+from datasets import uniform
 
 
 class BaseDataset(data.Dataset):
@@ -20,13 +21,15 @@ class BaseDataset(data.Dataset):
     id_to_trainid = {}
     trainid_to_id = {}
 
-    def __init__(self, mode, joint_transform_list, img_transform, label_transform):
+    def __init__(self, mode, uniform_sampling, joint_transform_list, img_transform, label_transform):
         super(BaseDataset, self).__init__()
         self.mode = mode
+        self.uniform_sampling = uniform_sampling
         self.joint_transform_list = joint_transform_list
         self.img_transform = img_transform
         self.label_transform = label_transform
-        self.data = self.build_data()
+        self.all_data = self.build_data()
+        self.records = None
 
         if self.img_transform is None:
             self.img_transform = ttf.Compose([
@@ -37,6 +40,9 @@ class BaseDataset(data.Dataset):
 
     def build_data(self):
         raise NotImplementedError
+
+    def build_epoch(self):
+        self.data = uniform.build_epoch(self.all_data, self.records, self.num_classes, self.mode)
 
     @staticmethod
     def find_images(img_root, mask_root=None, img_ext="tif", mask_ext="png"):
@@ -80,11 +86,11 @@ class BaseDataset(data.Dataset):
 
         return img, mask, img_name
 
-    def do_transforms(self, img, mask):
+    def do_transforms(self, img, mask, centroid=None):
 
         if self.joint_transform_list is not None:
             for idx, xform in enumerate(self.joint_transform_list):
-                img, mask = xform(img, mask)
+                img, mask = xform(img, mask, centroid)
 
         if self.img_transform is not None:
             img = self.img_transform(img)
@@ -100,7 +106,11 @@ class BaseDataset(data.Dataset):
         return img, mask
 
     def __getitem__(self, item):
-        img_path, mask_path = self.data[item]
+        if len(self.data[item]) == 2:
+            img_path, mask_path = self.data[item]
+            centroid, class_id = None, None
+        else:
+            img_path, mask_path, centroid, class_id = self.data[item]
 
         img, mask, img_name = self.read_images(img_path, mask_path)
 

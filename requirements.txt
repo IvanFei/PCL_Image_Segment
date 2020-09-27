@@ -8,4 +8,4 @@ opencv-python==4.1.2.30
 scikit-image==0.15.0
 scikit-build
 cmake
-
+torch

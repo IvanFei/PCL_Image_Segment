@@ -16,6 +16,7 @@ from datasets.pcl_dataset import DataSet
 from network.network_factory import get_model, get_net
 from loss.loss_factory import get_loss
 from optimizer.optimizer_factory import get_optimizer
+from transforms.get_transforms import get_transforms
 
 
 logger = get_logger()
@@ -31,6 +32,10 @@ def get_args():
     data = parser.add_argument_group("Data")
     data.add_argument("--dataset", type=str, default="PCL")
     data.add_argument("--num_workers", type=int, default=8)
+    data.add_argument("--uniform_sampling", type=bool, default=False)
+    data.add_argument("--crop_size", type=int, default=256)
+    data.add_argument("--scale_min", type=float, default=1.0)
+    data.add_argument("--scale_max", type=float, default=1.5)
 
     net = parser.add_argument_group("Net")
     net.add_argument("--load_path", type=str, default="")
@@ -71,12 +76,15 @@ def get_args():
 
 
 def main(args):
-    train_joint_transform_list, train_img_transform, train_label_transform = None, None, None
-    val_joint_transform_list, val_img_transform, val_label_transform = None, None, None
+    # train_joint_transform_list, train_img_transform, train_label_transform = None, None, None
+    # val_joint_transform_list, val_img_transform, val_label_transform = None, None, None
+    train_joint_transform_list, train_img_transform, train_label_transform = get_transforms(args, mode="train")
+    val_joint_transform_list, val_img_transform, val_label_transform = get_transforms(args, mode="train")
 
-    train_dataset = DataSet(mode="train", joint_transform_list=train_joint_transform_list,
+    train_dataset = DataSet(mode="train", uniform_sampling=args.uniform_sampling,
+                            joint_transform_list=train_joint_transform_list,
                             img_transform=train_img_transform, label_transform=train_label_transform)
-    val_dataset = DataSet(mode="val", joint_transform_list=val_label_transform,
+    val_dataset = DataSet(mode="val", uniform_sampling=False, joint_transform_list=val_label_transform,
                           img_transform=val_img_transform, label_transform=val_label_transform)
 
     train_loader = data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
@@ -120,6 +128,8 @@ def main(args):
 
         train_loss, step, maxscore = train(args, train_loader, val_loader, model, val_criterion, optimizer,
                                            lr_scheduler, epoch, step, tb, maxscore, cuda=args.cuda)
+        if args.uniform_sampling:
+            train_loader.dataset.build_epoch()
 
 
 def train(args, train_loader, val_loader, model, val_criterion, optimizer, lr_schedule, epoch, step, tb, max_score, cuda=False):

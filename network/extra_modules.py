@@ -8,6 +8,8 @@ from network.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
 from network.xception import xception71
 from network.mobilenetv2 import mobilenetv2
 from network.hrnetv2 import hrnetv2
+from network.pnasnet import PNASNet5Large, PNASNet5Small, pnasnet5large, pnasnet5small
+from network.efficientnet_base import EfficientNet, EncoderMixin
 
 
 Norm2d = nn.BatchNorm2d
