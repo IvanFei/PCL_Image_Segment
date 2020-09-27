@@ -54,6 +54,10 @@ def DeeperX71(num_classes, criterion=None):
     return DeeperS8(num_classes, criterion=criterion, trunk="xception71")
 
 
+def DeeperRX101(num_classes, criterion=None):
+    pass
+
+
 if __name__ == '__main__':
     model = DeeperS8(num_classes=80)
 

@@ -30,12 +30,13 @@ def get_transforms(args, mode="train"):
                             standard_transforms.Normalize(*mean_std)]
         input_transform = standard_transforms.Compose(input_transform)
 
+        # label transform
+        label_transform = extended_transforms.MaskToTensor()
+
     else:
         joint_transform_list = None
         input_transform = None
-
-    # label transform
-    label_transform = extended_transforms.MaskToTensor()
+        label_transform = None
 
     return joint_transform_list, input_transform, label_transform
 

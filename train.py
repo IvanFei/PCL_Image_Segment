@@ -84,7 +84,7 @@ def main(args):
     train_dataset = DataSet(mode="train", uniform_sampling=args.uniform_sampling,
                             joint_transform_list=train_joint_transform_list,
                             img_transform=train_img_transform, label_transform=train_label_transform)
-    val_dataset = DataSet(mode="val", uniform_sampling=False, joint_transform_list=val_label_transform,
+    val_dataset = DataSet(mode="val", uniform_sampling=False, joint_transform_list=val_joint_transform_list,
                           img_transform=val_img_transform, label_transform=val_label_transform)
 
     train_loader = data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,

@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from collections import OrderedDict
 # import network
 from network.SEresnext import se_resnext50_32x4d, se_resnext101_32x4d
-from network.resnet import resnet18, resnet34, resnet50, resnet101, resnet152
+from network.resnet import resnet18, resnet34, resnet50, resnet101, resnet152, resnext101_32x8d
 from network.xception import xception71
 from network.mobilenetv2 import mobilenetv2
 from network.hrnetv2 import hrnetv2
@@ -37,6 +37,10 @@ class get_resnet(nn.Module):
                                           resnet.relu, resnet.maxpool)
         elif trunk_name == "resnet152":
             resnet = resnet152(pretrained=pretrained)
+            resnet.layer0 = nn.Sequential(resnet.conv1, resnet.bn1,
+                                          resnet.relu, resnet.maxpool)
+        elif trunk_name == "resnext101_32x8d":
+            resnet = resnext101_32x8d(pretrained=pretrained)
             resnet.layer0 = nn.Sequential(resnet.conv1, resnet.bn1,
                                           resnet.relu, resnet.maxpool)
         elif trunk_name == "se_resnet50":
@@ -90,7 +94,7 @@ def get_trunk(trunk_name, output_stride=8, pretrained=True):
         s2_ch, s4_ch = 64, 128
         high_level_ch = 2048
     elif trunk_name == "resnet50" or trunk_name == "resnet101" or trunk_name == "resnet152" \
-        or trunk_name == "resnet18" or trunk_name == "resnet34":
+        or trunk_name == "resnet18" or trunk_name == "resnet34" or trunk_name == "resnext101_32x8d":
         backbone = get_resnet(trunk_name, output_stride=output_stride, pretrained=pretrained)
 
         s2_ch, s4_ch = 256, -1
@@ -294,7 +298,7 @@ def mask_attn_head(in_ch, out_ch):
 
 
 if __name__ == '__main__':
-    backbone, s2_ch, s4_ch, high_level_ch = get_trunk(trunk_name="hrnetv2")
+    backbone, s2_ch, s4_ch, high_level_ch = get_trunk(trunk_name="resnext101_32x8d")
     print(backbone.state_dict().keys())
     print(s2_ch, s4_ch, high_level_ch)
 

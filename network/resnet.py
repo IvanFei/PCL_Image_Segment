@@ -386,7 +386,7 @@ def wide_resnet101_2(pretrained=False, progress=True, **kwargs):
 
 
 if __name__ == "__main__":
-    resnet = resnet101(pretrained=True)
+    resnet = resnext101_32x8d(pretrained=True)
     print(resnet.state_dict().keys())
     print(f"[*] bn1.num_batches_tracked: {resnet.state_dict()['bn1.num_batches_tracked']}")
     # torch.save(model.state_dict(), "test_resnet101.pth")

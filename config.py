@@ -43,6 +43,7 @@ __C.MODEL.BACKBONE_CHECKPOINTS = {
     "resnet50": os.path.join(__C.WEIGHT_PATH, "resnet50.pth"),
     "resnet101": os.path.join(__C.WEIGHT_PATH, "resnet101.pth"),
     "resnet152": os.path.join(__C.WEIGHT_PATH, "resnet152.pth"),
+    "resnext101_32x8d": os.path.join(__C.WEIGHT_PATH, "resnext101_32x8d-8ba56ff5.pth"),
     "xcption": os.path.join(__C.WEIGHT_PATH, "xception-43020ad28.pth"),
     "mobilenetv2": os.path.join(__C.WEIGHT_PATH, "mobilenet_v2.pth.tar"),
     "hrnetv2": os.path.join(__C.WEIGHT_PATH, "hrnetv2_w48-imagenet.pth"),
