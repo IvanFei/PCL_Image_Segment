@@ -272,11 +272,25 @@ class PadImage(object):
         
         return img, mask
 
+
 class RandomHorizontallyFlip(object):
     def __call__(self, img, mask, centroid=None):
-        if random.random() < 0.5:
+        if random.uniform(0, 1) < 0.5:
             return img.transpose(Image.FLIP_LEFT_RIGHT), mask.transpose(
                 Image.FLIP_LEFT_RIGHT)
+        return img, mask
+
+
+class RandomRotate(object):
+    def __init__(self, p=0.5):
+        self.p = p
+        self.rotate_flag = [Image.ROTATE_90, Image.ROTATE_270]
+
+    def __call__(self, img, mask, centroid=None):
+        if random.uniform(0, 1) < 0.5:
+            idx = random.randint(0, 1)
+            return img.transpose(self.rotate_flag[idx]), mask.transpose(self.rotate_flag[idx])
+
         return img, mask
 
 
