@@ -14,8 +14,8 @@ def get_transforms(args, mode="train"):
     # image mask transform
     if mode == "train":
         joint_transform_list = []
-        # joint_transform_list += [joint_transforms.RandomSizeAndCrop(args.crop_size, crop_nopad=False, p=0.5,
-        #                                               scale_min=args.scale_min, scale_max=args.scale_max)]
+        joint_transform_list += [joint_transforms.RandomSizeAndCrop(args.crop_size, crop_nopad=False, p=0.5,
+                                                      scale_min=args.scale_min, scale_max=args.scale_max)]
 
         # TODO add another joint transforms
         joint_transform_list += [joint_transforms.RandomHorizontallyFlip()]  # default percent is 0.5
