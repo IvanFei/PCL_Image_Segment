@@ -281,7 +281,7 @@ class RandomHorizontallyFlip(object):
         return img, mask
 
 
-class RandomRotate(object):
+class RandomRotate90(object):
     def __init__(self, p=0.5):
         self.p = p
         self.rotate_flag = [Image.ROTATE_90, Image.ROTATE_270]
