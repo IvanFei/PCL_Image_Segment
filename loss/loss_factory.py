@@ -29,6 +29,8 @@ def get_loss(args, cuda=False):
         if cuda:
             weights = weights.cuda()
         criterion = SymmetricCrossEntropyLoss2d(weights=weights, ignore_index=cfg.DATASET.IGNORE_LABEL)
+    elif args.loss_type == "focal":
+        criterion = FocalCrossEntropy(gamma=3.5, alpha=0.2, smooth=0.1)
     else:
         raise NotImplementedError("[*] loss {} is not implement.".format(args.loss_type))
 
@@ -131,9 +133,50 @@ class ImageBasedCrossEntropyLoss2d(nn.Module):
         return loss
 
 
+class FocalCrossEntropy(nn.Module):
+    def __init__(self, gamma=2.0, alpha=1.0, smooth=0.1, weight=None, reduction="mean"):
+        super(FocalCrossEntropy, self).__init__()
+        self.gamma = gamma
+        self.alpha = alpha
+        self.smooth = smooth
+        self.weight = weight
+        self.reduction = reduction
+
+    def forward(self, inputs, targets):
+        B, C, H, W = inputs.size()
+        epsilon = 1e-10
+        logit = F.softmax(inputs, dim=1)
+
+        if logit.dim() > 2:
+            # N, C, d1, d2 -> N, C, m
+            logit = logit.view(logit.size(0), logit.size(1), -1)
+            logit = logit.permute(0, 2, 1).contiguous()
+            logit = logit.view(-1, logit.size(-1))
+        targets = targets.view(-1, 1)
+        idx = targets.long()
+        target_onehot = torch.zeros([targets.size(0), C]).scatter_(1, idx, 1)
+        if target_onehot.device != inputs.device:
+            target_onehot = target_onehot.to(inputs.device)
+
+        if self.smooth:
+            target_onehot = torch.clamp(target_onehot, self.smooth / (C - 1), 1. - self.smooth)
+
+        pt = (target_onehot * logit).sum(1) + epsilon
+        logpt = pt.log()
+
+        loss = -1 * self.alpha * torch.pow((1 - pt), self.gamma) * logpt
+
+        if self.reduction == "mean":
+            return loss.mean()
+        elif self.reduction == "sum":
+            return loss.sum()
+        else:
+            return loss
+
+
 if __name__ == '__main__':
     import easydict as edict
-    args = edict.EasyDict({"loss_type": "ce"})
+    args = edict.EasyDict({"loss_type": "focal"})
     criterion, criterion_val = get_loss(args=args)
     inputs = torch.sigmoid(torch.randn([1, 2, 5, 5]))
     targets = torch.ones([1, 5, 5]).long()

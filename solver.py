@@ -27,7 +27,7 @@ p['lr_branch'] = 0.025  # Learning rate
 p['wd'] = 0.0005  # Weight decay
 p['momentum'] = 0.90  # Momentum
 lr_decay_epoch = [15, 24] # [6, 9], now x3 #15
-nAveGrad = 1  # Update the weights once in 'nAveGrad' forward passes
+nAveGrad = 10  # Update the weights once in 'nAveGrad' forward passes
 showEvery = 50
 tmp_path = 'tmp_see'
 

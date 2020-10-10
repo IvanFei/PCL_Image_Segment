@@ -79,7 +79,7 @@ def main(args):
     # train_joint_transform_list, train_img_transform, train_label_transform = None, None, None
     # val_joint_transform_list, val_img_transform, val_label_transform = None, None, None
     train_joint_transform_list, train_img_transform, train_label_transform = get_transforms(args, mode="train")
-    val_joint_transform_list, val_img_transform, val_label_transform = get_transforms(args, mode="val")
+    val_joint_transform_list, val_img_transform, val_label_transform = None, None, None
 
     train_dataset = DataSet(mode="train", uniform_sampling=args.uniform_sampling,
                             joint_transform_list=train_joint_transform_list,

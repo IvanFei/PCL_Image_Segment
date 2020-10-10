@@ -14,18 +14,18 @@ def get_transforms(args, mode="train"):
     # image mask transform
     if mode == "train":
         joint_transform_list = []
-        joint_transform_list += [joint_transforms.RandomSizeAndCrop(args.crop_size, crop_nopad=False, p=0.5,
-                                                      scale_min=args.scale_min, scale_max=args.scale_max)]
+        # joint_transform_list += [joint_transforms.RandomSizeAndCrop(args.crop_size, crop_nopad=False, p=0.5,
+        #                                               scale_min=args.scale_min, scale_max=args.scale_max)]
 
         # TODO add another joint transforms
         joint_transform_list += [joint_transforms.RandomHorizontallyFlip()]  # default percent is 0.5
-        joint_transform_list += [joint_transforms.RandomRotate90(p=0.5)]
+        joint_transform_list += [joint_transforms.RandomRotate90(p=0.9)]
 
         # image transform
         input_transform = []
-        input_transform += [extended_transforms.ColorJitter(brightness=0.25, contrast=0.25,
-                                                            saturation=0.25, hue=0.25, p=0.5)]
-        input_transform += [extended_transforms.RandomGaussianBlur(p=0.5)]
+        input_transform += [extended_transforms.ColorJitter(brightness=0.25, contrast=0,
+                                                            saturation=0, hue=0, p=0.5)]
+        # input_transform += [extended_transforms.RandomGaussianBlur(p=0.5)]
 
         mean_std = (cfg.DATASET.MEAN, cfg.DATASET.STD)
         input_transform += [standard_transforms.ToTensor(),

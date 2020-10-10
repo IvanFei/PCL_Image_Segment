@@ -46,7 +46,7 @@ if __name__ == '__main__':
     parser.add_argument('--vgg', type=str, default=vgg_path)
     parser.add_argument('--resnet', type=str, default=resnet_path)
     parser.add_argument('--epoch', type=int, default=30) # 12, now x3
-    parser.add_argument('--batch_size', type=int, default=16)
+    parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--test_batch_size', type=int, default=1)
     parser.add_argument('--num_thread', type=int, default=4)
     parser.add_argument('--load_bone', type=str, default='')
