@@ -66,6 +66,7 @@ def get_args():
     train.add_argument("--num_epochs", type=int, default=100)
     train.add_argument("--num_steps", type=int, default=3e5)  # for lr schedule
     train.add_argument("--val_freq", type=int, default=1000)
+    train.add_argument("--retrain", type=bool, default=False)
 
     gpu = parser.add_argument_group("GPU")
     gpu.add_argument("--gpu_id", type=int, default=0)
@@ -110,10 +111,14 @@ def main(args):
             raise ValueError("[*] The `load_path` should be exists and end with pth.")
 
         checkpoint = torch.load(args.load_path)
-        start_epoch = checkpoint["epoch"]
-        start_step = checkpoint["step"]
         model.load_state_dict(checkpoint["state_dict"])
-        optimizer.load_state_dict(checkpoint["optimizer"])
+        if not args.retrain:
+            start_epoch = checkpoint["epoch"]
+            start_step = checkpoint["step"]
+
+            optimizer.load_state_dict(checkpoint["optimizer"])
+        else:
+            start_epoch, start_step = 0, 0
 
         logger.info(f"[*] LOADED successfully checkpoints from: {args.load_path}")
 

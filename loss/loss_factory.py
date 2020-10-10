@@ -155,7 +155,7 @@ class FocalCrossEntropy(nn.Module):
             logit = logit.permute(0, 2, 1).contiguous()
             logit = logit.view(-1, logit.size(-1))
         targets = targets.view(-1, 1)
-        idx = targets.long()
+        idx = targets.cpu().long()
         target_onehot = torch.zeros([targets.size(0), C]).scatter_(1, idx, 1)
         if target_onehot.device != inputs.device:
             target_onehot = target_onehot.to(inputs.device)
