@@ -31,6 +31,8 @@ def get_loss(args, cuda=False):
         criterion = SymmetricCrossEntropyLoss2d(weights=weights, ignore_index=cfg.DATASET.IGNORE_LABEL)
     elif args.loss_type == "focal":
         criterion = FocalCrossEntropy(gamma=3.5, alpha=0.2, smooth=0.1)
+    elif args.loss_type == "ohem":
+        criterion = OHEMCrossEntropy(selected_ratio=0.5)
     else:
         raise NotImplementedError("[*] loss {} is not implement.".format(args.loss_type))
 
@@ -134,7 +136,7 @@ class ImageBasedCrossEntropyLoss2d(nn.Module):
 
 
 class FocalCrossEntropy(nn.Module):
-    def __init__(self, gamma=2.0, alpha=1.0, smooth=0.1, weight=None, reduction="mean"):
+    def __init__(self, gamma=2.0, alpha=1.0, smooth=0.1, weight=None, reduction="mean", **kwargs):
         super(FocalCrossEntropy, self).__init__()
         self.gamma = gamma
         self.alpha = alpha
@@ -174,12 +176,39 @@ class FocalCrossEntropy(nn.Module):
             return loss
 
 
+class OHEMCrossEntropy(nn.Module):
+    def __init__(self, selected_ratio=0.5, **kwargs):
+        super(OHEMCrossEntropy, self).__init__()
+        self.selected_ratio = selected_ratio
+
+        self.cross_entropy = nn.CrossEntropyLoss(reduction="none")
+
+    def forward(self, inputs, targets):
+        batch_size = inputs.size(0)
+        n_selected = int(self.selected_ratio * batch_size)
+
+        if inputs.dim() > 2:
+            inputs = inputs.view(inputs.size(0), inputs.size(1), -1)
+            inputs = inputs.permute(0, 2, 1).contiguous()
+            inputs = inputs.view(-1, inputs.size(-1))
+        targets = targets.view(-1, 1).squeeze(1)
+
+        ce_loss = self.cross_entropy(inputs, targets)
+        vals, _ = ce_loss.topk(n_selected, 0, True, True)
+        th = vals[-1]
+        selected_mask = ce_loss >= th
+        loss_weight = selected_mask.float()
+        loss = (ce_loss * loss_weight).sum() / loss_weight.sum()
+
+        return loss
+
+
 if __name__ == '__main__':
     import easydict as edict
     args = edict.EasyDict({"loss_type": "focal"})
     criterion, criterion_val = get_loss(args=args)
-    inputs = torch.sigmoid(torch.randn([1, 2, 5, 5]))
-    targets = torch.ones([1, 5, 5]).long()
+    inputs = torch.sigmoid(torch.randn([10, 2, 5, 5]))
+    targets = torch.ones([10, 5, 5]).long()
     print(inputs, targets)
     loss = criterion(inputs, targets)
     print(loss)
