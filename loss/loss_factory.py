@@ -6,7 +6,10 @@ import torch.nn.functional as F
 
 from config import cfg
 from loss.rmi import RMILoss
-from utils.utils import get_class_weight
+from utils.utils import get_class_weight, get_logger
+
+
+logger = get_logger()
 
 
 def get_loss(args, cuda=False):
@@ -20,24 +23,37 @@ def get_loss(args, cuda=False):
     elif args.loss_type == "weight_ce":
         criterion = ImageBasedCrossEntropyLoss2d(num_classes=cfg.DATASET.NUM_CLASSES,
                                                  ignore_index=cfg.DATASET.IGNORE_LABEL)
+        logger.info("[*] Loaded the `weight_ce` loss.")
     elif args.loss_type == "rmi":
         criterion = RMILoss(num_classes=cfg.DATASET.NUM_CLASSES,
                             ignore_index=cfg.DATASET.IGNORE_LABEL)
+        logger.info("[*] Loaded the `rmi loss` loss.")
     elif args.loss_type == "sce":
         weights = get_class_weight()
         weights = torch.from_numpy(weights).float()
         if cuda:
             weights = weights.cuda()
         criterion = SymmetricCrossEntropyLoss2d(weights=weights, ignore_index=cfg.DATASET.IGNORE_LABEL)
+        logger.info("[*] Loaded the `sce` loss.")
     elif args.loss_type == "focal":
         criterion = FocalCrossEntropy(gamma=2.0, alpha=0.2, smooth=0.1)
     elif args.loss_type == "ohem":
         criterion = OHEMCrossEntropy(selected_ratio=0.5)
+        logger.info("[*] Loaded the `ohem loss` loss.")
     elif args.loss_type == "combo":
         weights = get_class_weight()
         criterion = MultiComboLoss(num_classes=cfg.DATASET.NUM_CLASSES,
                                    alpha=0.5, ce_ratio=0.5, weights=weights,
                                    ignore_label=cfg.DATASET.IGNORE_LABEL)
+        logger.info("[*] Loaded the `combo loss` loss.")
+    elif args.loss_type == "iou":
+        weights = get_class_weight()
+        criterion = MultiIouLoss(num_classes=cfg.DATASET.NUM_CLASSES, weight=weights)
+        logger.info("[*] Loaded the `iou` loss.")
+    elif args.loss_type == "focal_tversky":
+        weights = get_class_weight()
+        criterion = FocalTverskyLoss(num_classes=cfg.DATASET.NUM_CLASSES, weight=weights)
+        logger.info("[*] Loaded the `focal tversky` loss.")
     else:
         raise NotImplementedError("[*] loss {} is not implement.".format(args.loss_type))
 
@@ -256,9 +272,94 @@ class MultiComboLoss(nn.Module):
         return total_loss
 
 
+class BinaryIoULoss(nn.Module):
+    def __init__(self, weight=None, **kwargs):
+        super(BinaryIoULoss, self).__init__()
+        self.weight = weight
+
+    def forward(self, inputs, targets, smooth=1.):
+        inputs = inputs.view(-1)
+        targets = targets.view(-1)
+
+        intersection = (inputs * targets).sum()
+        total = (inputs + targets).sum()
+        union = total - intersection
+
+        iou = (intersection + smooth) / (union + smooth)
+
+        return 1 - iou
+
+
+class MultiIouLoss(nn.Module):
+    def __init__(self, num_classes, weight=None, ignore_label=cfg.DATASET.IGNORE_LABEL, **kwargs):
+        super(MultiIouLoss, self).__init__()
+        self.num_classes = num_classes
+        self.weight = weight
+        self.ignore_label = ignore_label
+
+        self.iou_loss = BinaryIoULoss()
+
+    def forward(self, inputs, targets):
+        total_loss = 0.0
+        inputs = F.softmax(inputs, dim=1)
+        for c in range(self.num_classes):
+            loss = self.iou_loss(inputs[:, c:c+1].contiguous(), (targets == c).float())
+            if self.weight is not None:
+                loss *= self.weight[c]
+
+            total_loss += loss
+
+        return total_loss / self.num_classes
+
+
+class BinaryFocalTverskyLoss(nn.Module):
+    def __init__(self, alpha=0.5, beta=0.5, gamma=1.0, weight=None, **kwargs):
+        super(BinaryFocalTverskyLoss, self).__init__()
+        self.alpha = alpha
+        self.beta = beta
+        self.gamma = gamma
+        self.weight = weight
+
+    def forward(self, inputs, targets, smooth=1.0):
+        inputs = inputs.view(-1)
+        targets = targets.view(-1)
+
+        TP = (inputs * targets).sum()
+        FP = ((1 - targets) * inputs).sum()
+        FN = (targets * (1 - inputs)).sum()
+
+        tversky = (TP + smooth) / (TP + self.alpha * FP + self.beta * FN + smooth)
+        focal_tversky = (1 - tversky)**self.gamma
+
+        return focal_tversky
+
+
+class FocalTverskyLoss(nn.Module):
+    def __init__(self, num_classes, alpha=0.5, beta=0.5, gamma=1.0, weight=None, **kwargs):
+        super(FocalTverskyLoss, self).__init__()
+        self.num_classes = num_classes
+        self.alpha = alpha
+        self.beta = beta
+        self.gamma = gamma
+        self.weight = weight
+        self.focal_tversky = BinaryFocalTverskyLoss(alpha=alpha, beta=beta, gamma=gamma)
+
+    def forward(self, inputs, targets):
+        total_loss = 0.0
+        inputs = F.softmax(inputs, dim=1)
+        for c in range(self.num_classes):
+            loss = self.focal_tversky(inputs[:, c:c + 1].contiguous(), (targets == c).float())
+            if self.weight is not None:
+                loss *= self.weight[c]
+
+            total_loss += loss
+
+        return total_loss / self.num_classes
+
+
 if __name__ == '__main__':
     import easydict as edict
-    args = edict.EasyDict({"loss_type": "combo"})
+    args = edict.EasyDict({"loss_type": "focal_tversky"})
     criterion, criterion_val = get_loss(args=args)
     inputs = torch.sigmoid(torch.randn([1, 2, 5, 5]))
     targets = torch.ones([1, 5, 5]).long()

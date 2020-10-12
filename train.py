@@ -96,7 +96,7 @@ def main(args):
     logger.info("[*] Initial the train loader and val loader.")
 
     criterion, val_criterion = get_loss(args, cuda=args.cuda)
-    logger.info("[*] Loaded the criterion.")
+    # logger.info("[*] Loaded the criterion.")
 
     model = get_net(args, criterion, cuda=args.cuda)
     logger.info("[*] Loaded the model.")
