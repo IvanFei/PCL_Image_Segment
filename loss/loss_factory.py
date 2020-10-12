@@ -30,7 +30,7 @@ def get_loss(args, cuda=False):
             weights = weights.cuda()
         criterion = SymmetricCrossEntropyLoss2d(weights=weights, ignore_index=cfg.DATASET.IGNORE_LABEL)
     elif args.loss_type == "focal":
-        criterion = FocalCrossEntropy(gamma=3.5, alpha=0.2, smooth=0.1)
+        criterion = FocalCrossEntropy(gamma=2.0, alpha=0.2, smooth=0.1)
     elif args.loss_type == "ohem":
         criterion = OHEMCrossEntropy(selected_ratio=0.5)
     elif args.loss_type == "combo":
@@ -237,7 +237,7 @@ class ComboLoss(nn.Module):
 
 if __name__ == '__main__':
     import easydict as edict
-    args = edict.EasyDict({"loss_type": "ohem"})
+    args = edict.EasyDict({"loss_type": "focal"})
     criterion, criterion_val = get_loss(args=args)
     inputs = torch.sigmoid(torch.randn([10, 2, 5, 5]))
     targets = torch.ones([10, 5, 5]).long()
