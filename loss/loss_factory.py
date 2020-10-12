@@ -247,7 +247,7 @@ class MultiComboLoss(nn.Module):
         total_loss = 0.0
         inputs = F.softmax(inputs, dim=1)
         for c in range(self.num_classes):
-            loss = self.combo_loss(inputs[:, c:c+1].contiguous(), (targets==c).float())
+            loss = self.combo_loss(inputs[:, c:c+1].contiguous(), (targets == c).float())
             if self.weight is not None:
                 loss *= self.weight[c]
 
