@@ -23,8 +23,8 @@ def get_transforms(args, mode="train"):
 
         # image transform
         input_transform = []
-        input_transform += [extended_transforms.ColorJitter(brightness=0.25, contrast=0,
-                                                            saturation=0, hue=0, p=0.5)]
+        # input_transform += [extended_transforms.ColorJitter(brightness=0.25, contrast=0,
+        #                                                     saturation=0, hue=0, p=0.5)]
         # input_transform += [extended_transforms.RandomGaussianBlur(p=0.5)]
 
         mean_std = (cfg.DATASET.MEAN, cfg.DATASET.STD)

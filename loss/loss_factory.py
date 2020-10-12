@@ -33,6 +33,8 @@ def get_loss(args, cuda=False):
         criterion = FocalCrossEntropy(gamma=3.5, alpha=0.2, smooth=0.1)
     elif args.loss_type == "ohem":
         criterion = OHEMCrossEntropy(selected_ratio=0.5)
+    elif args.loss_type == "combo":
+        criterion = ComboLoss()
     else:
         raise NotImplementedError("[*] loss {} is not implement.".format(args.loss_type))
 
@@ -185,7 +187,8 @@ class OHEMCrossEntropy(nn.Module):
 
     def forward(self, inputs, targets):
         batch_size = inputs.size(0)
-        n_selected = int(self.selected_ratio * batch_size)
+        pixel_num = inputs.size(2) * inputs.size(3)
+        n_selected = int(self.selected_ratio * batch_size * pixel_num)
 
         if inputs.dim() > 2:
             inputs = inputs.view(inputs.size(0), inputs.size(1), -1)
@@ -203,9 +206,38 @@ class OHEMCrossEntropy(nn.Module):
         return loss
 
 
+class ComboLoss(nn.Module):
+    def __init__(self, alpha=0.5, beta=0.5, ce_ratio=0.5, weight=None, size_average=True, **kwargs):
+        super(ComboLoss, self).__init__()
+        self.alpha = alpha
+        self.beta = beta
+        self.ce_ratio = ce_ratio
+        self.weight = weight
+        self.size_average = size_average
+
+    def forward(self, inputs, targets, smooth=1):
+        # flatten label and prediction tensors
+        e = 1e-10
+        inputs = inputs.view(-1)
+        targets = targets.view(-1)
+
+        print(inputs.shape)
+        print(targets.shape)
+        # True Positives, False Positives & False Negatives
+        intersection = (inputs * targets).sum()
+        dice = (2. * intersection + smooth) / (inputs.sum() + targets.sum() + smooth)
+
+        inputs = torch.clamp(inputs, e, 1.0 - e)
+        out = - (self.alpha * ((targets * torch.log(inputs)) + ((1 - self.alpha) * (1.0 - targets) * torch.log(1.0 - inputs))))
+        weighted_ce = out.mean(-1)
+        combo = (self.ce_ratio * weighted_ce) - ((1 - self.ce_ratio) * dice)
+
+        return combo
+
+
 if __name__ == '__main__':
     import easydict as edict
-    args = edict.EasyDict({"loss_type": "focal"})
+    args = edict.EasyDict({"loss_type": "ohem"})
     criterion, criterion_val = get_loss(args=args)
     inputs = torch.sigmoid(torch.randn([10, 2, 5, 5]))
     targets = torch.ones([10, 5, 5]).long()
