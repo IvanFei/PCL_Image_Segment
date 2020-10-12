@@ -34,7 +34,10 @@ def get_loss(args, cuda=False):
     elif args.loss_type == "ohem":
         criterion = OHEMCrossEntropy(selected_ratio=0.5)
     elif args.loss_type == "combo":
-        criterion = ComboLoss()
+        weights = get_class_weight()
+        criterion = MultiComboLoss(num_classes=cfg.DATASET.NUM_CLASSES,
+                                   alpha=0.5, ce_ratio=0.5, weights=weights,
+                                   ignore_label=cfg.DATASET.IGNORE_LABEL)
     else:
         raise NotImplementedError("[*] loss {} is not implement.".format(args.loss_type))
 
@@ -148,7 +151,7 @@ class FocalCrossEntropy(nn.Module):
 
     def forward(self, inputs, targets):
         B, C, H, W = inputs.size()
-        epsilon = 1e-10
+        epsilon = 1e-7
         logit = F.softmax(inputs, dim=1)
 
         if logit.dim() > 2:
@@ -206,28 +209,24 @@ class OHEMCrossEntropy(nn.Module):
         return loss
 
 
-class ComboLoss(nn.Module):
-    def __init__(self, alpha=0.5, beta=0.5, ce_ratio=0.5, weight=None, size_average=True, **kwargs):
-        super(ComboLoss, self).__init__()
+class BinaryComboLoss(nn.Module):
+    def __init__(self, alpha=0.5, ce_ratio=0.5, weight=None, size_average=True, **kwargs):
+        super(BinaryComboLoss, self).__init__()
         self.alpha = alpha
-        self.beta = beta
         self.ce_ratio = ce_ratio
         self.weight = weight
         self.size_average = size_average
 
-    def forward(self, inputs, targets, smooth=1):
+    def forward(self, inputs, targets, smooth=1.0):
         # flatten label and prediction tensors
-        e = 1e-10
+        eps = 1e-7
         inputs = inputs.view(-1)
         targets = targets.view(-1)
 
-        print(inputs.shape)
-        print(targets.shape)
         # True Positives, False Positives & False Negatives
         intersection = (inputs * targets).sum()
         dice = (2. * intersection + smooth) / (inputs.sum() + targets.sum() + smooth)
-
-        inputs = torch.clamp(inputs, e, 1.0 - e)
+        inputs = torch.clamp(inputs, eps, 1.0 - eps)
         out = - (self.alpha * ((targets * torch.log(inputs)) + ((1 - self.alpha) * (1.0 - targets) * torch.log(1.0 - inputs))))
         weighted_ce = out.mean(-1)
         combo = (self.ce_ratio * weighted_ce) - ((1 - self.ce_ratio) * dice)
@@ -235,12 +234,34 @@ class ComboLoss(nn.Module):
         return combo
 
 
+class MultiComboLoss(nn.Module):
+    def __init__(self, num_classes, alpha=0.5, ce_ratio=0.5, weight=None, 
+                 ignore_label=cfg.DATASET.IGNORE_LABEL, **kwargs):
+        super(MultiComboLoss, self).__init__()
+        self.num_classes = num_classes
+        self.weight = weight
+        self.ignore_label = ignore_label
+        self.combo_loss = BinaryComboLoss(alpha=alpha, ce_ratio=ce_ratio)
+
+    def forward(self, inputs, targets):
+        total_loss = 0.0
+        inputs = F.softmax(inputs, dim=1)
+        for c in range(self.num_classes):
+            loss = self.combo_loss(inputs[:, c:c+1].contiguous(), (targets==c).float())
+            if self.weight is not None:
+                loss *= self.weight[c]
+
+            total_loss += loss
+
+        return total_loss
+
+
 if __name__ == '__main__':
     import easydict as edict
-    args = edict.EasyDict({"loss_type": "focal"})
+    args = edict.EasyDict({"loss_type": "combo"})
     criterion, criterion_val = get_loss(args=args)
-    inputs = torch.sigmoid(torch.randn([10, 2, 5, 5]))
-    targets = torch.ones([10, 5, 5]).long()
+    inputs = torch.sigmoid(torch.randn([1, 2, 5, 5]))
+    targets = torch.ones([1, 5, 5]).long()
     print(inputs, targets)
     loss = criterion(inputs, targets)
     print(loss)
