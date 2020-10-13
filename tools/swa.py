@@ -29,7 +29,7 @@ def get_checkpoints(config, num_checkpoints=5):
     checkpoints = glob.glob(os.path.join(checkpoint_dir, "*.pth"))
 
     checkpoints.sort()
-    checkpoints = checkpoints[-num_checkpoints:][::-1]
+    checkpoints = checkpoints[-num_checkpoints:]
     return checkpoints
 
 
@@ -68,12 +68,14 @@ def run(config, num_checkpoints, cuda=False):
 
     output_name = "model-swa.pth"
     print(f"[*] SAVED: to {output_name}")
-    util_checkpoint.save_checkpoint(config.model_dir, output_name, model)
+    checkpoint_dir = os.path.join(ROOT_DIR, "logs", os.path.basename(config.model_dir))
+    util_checkpoint.save_checkpoint(checkpoint_dir, output_name, model)
 
     # test the model
-    scores = validation(config, val_loader, model, val_criterion, "swa", cuda=cuda)
-    with open(os.path.join(config.model_dir, "swa-scores.json"), "w") as f:
-        json.dump(scores, f)
+    scores = validation(config, val_loader, model, val_criterion, "swa", cuda=cuda, is_record=False)
+    print(scores)
+    with open(os.path.join(checkpoint_dir, "swa-scores.json"), "w") as f:
+        json.dump(scores["FWIOU"], f)
 
 
 def parse_args():

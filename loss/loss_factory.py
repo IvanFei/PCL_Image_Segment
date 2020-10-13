@@ -370,7 +370,7 @@ class BinaryCrossEntropy(nn.Module):
 
         self.bce = nn.BCELoss(reduction="mean")
 
-    def forward(self, inputs, targes):
+    def forward(self, inputs, targets):
         total_loss = 0.0
         inputs = torch.sigmoid(inputs)
         for c in range(self.num_classes):

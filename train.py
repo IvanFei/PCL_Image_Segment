@@ -208,7 +208,7 @@ def train(args, train_loader, val_loader, model, val_criterion, optimizer, lr_sc
     return train_loss.avg, step, max_score
 
 
-def validation(args, dataloader, model, criterion, step, cuda=False):
+def validation(args, dataloader, model, criterion, step, cuda=False, is_record=True):
     """
     Runs the validation loops
     """
@@ -241,17 +241,18 @@ def validation(args, dataloader, model, criterion, step, cuda=False):
     scores["FWIOU"] = segmeter.Frequency_Weighted_Intersection_over_Union()
 
     # save the scores
-    checkpoint_tracker_path = os.path.join(args.model_dir, "checkpoint_tracker.json")
-    if os.path.exists(checkpoint_tracker_path):
-        with open(checkpoint_tracker_path, "r") as f:
-            checkpoint_tracker = json.load(f)
-    else:
-        checkpoint_tracker = {}
+    if is_record:
+        checkpoint_tracker_path = os.path.join(args.model_dir, "checkpoint_tracker.json")
+        if os.path.exists(checkpoint_tracker_path):
+            with open(checkpoint_tracker_path, "r") as f:
+                checkpoint_tracker = json.load(f)
+        else:
+            checkpoint_tracker = {}
 
-    checkpoint_tracker["step_{}".format(step)] = scores["FWIOU"]
+        checkpoint_tracker["step_{}".format(step)] = scores["FWIOU"]
 
-    with open(checkpoint_tracker_path, "w") as f:
-        json.dump(checkpoint_tracker, f)
+        with open(checkpoint_tracker_path, "w") as f:
+            json.dump(checkpoint_tracker, f)
 
     model.train()
 
