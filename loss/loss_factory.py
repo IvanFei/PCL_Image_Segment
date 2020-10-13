@@ -46,6 +46,11 @@ def get_loss(args, cuda=False):
                                    alpha=0.5, ce_ratio=0.5, weights=weights,
                                    ignore_label=cfg.DATASET.IGNORE_LABEL)
         logger.info("[*] Loaded the `combo loss` loss.")
+    elif args.loss_type == "bce":
+        weights = get_class_weight()
+        criterion = BinaryCrossEntropy(num_classes=cfg.DATASET.NUM_CLASSES, weight=weights,
+                                       ignore_label=cfg.DATASET.IGNORE_LABEL)
+        logger.info("[*] Loaded the `binary cross entropy` loss.")
     elif args.loss_type == "iou":
         weights = get_class_weight()
         criterion = MultiIouLoss(num_classes=cfg.DATASET.NUM_CLASSES, weight=weights)
@@ -357,9 +362,30 @@ class FocalTverskyLoss(nn.Module):
         return total_loss / self.num_classes
 
 
+class BinaryCrossEntropy(nn.Module):
+    def __init__(self, num_classes, weight=None, ignore_label=cfg.DATASET.IGNORE_LABEL, **kwargs):
+        super(BinaryCrossEntropy, self).__init__()
+        self.num_classes = num_classes
+        self.weight = weight
+
+        self.bce = nn.BCELoss(reduction="mean")
+
+    def forward(self, inputs, targes):
+        total_loss = 0.0
+        inputs = torch.sigmoid(inputs)
+        for c in range(self.num_classes):
+            loss = self.bce(inputs[:, c].contiguous(), (targets == c).float())
+            if self.weight is not None:
+                loss *= self.weight[c]
+
+            total_loss += loss
+
+        return total_loss
+
+
 if __name__ == '__main__':
     import easydict as edict
-    args = edict.EasyDict({"loss_type": "focal_tversky"})
+    args = edict.EasyDict({"loss_type": "bce"})
     criterion, criterion_val = get_loss(args=args)
     inputs = torch.sigmoid(torch.randn([1, 2, 5, 5]))
     targets = torch.ones([1, 5, 5]).long()
