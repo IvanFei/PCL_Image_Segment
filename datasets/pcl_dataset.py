@@ -6,6 +6,7 @@ from config import cfg
 # from runx.logx import logx
 from datasets.base_dataset import BaseDataset
 from datasets import uniform
+from datasets import filter
 
 
 class DataSet(BaseDataset):
@@ -15,7 +16,8 @@ class DataSet(BaseDataset):
     id_to_trainid = {100: 0, 200: 1, 300: 2, 400: 3, 500: 4, 600: 5, 700: 6, 800: 7}
     trainid_to_id = {0: 100, 1: 200, 2: 300, 3: 400, 4: 500, 5: 600, 6: 700, 7: 800}
 
-    def __init__(self, mode, uniform_sampling=False, joint_transform_list=None, img_transform=None, label_transform=None):
+    def __init__(self, mode, uniform_sampling=False, filter_data=False,
+                 joint_transform_list=None, img_transform=None, label_transform=None):
 
         data_root = cfg.DATASET.PCL_DIR
 
@@ -27,13 +29,20 @@ class DataSet(BaseDataset):
         self.mask_root = os.path.join(data_root, mode, "label") if mode != "test" else None
 
         super(DataSet, self).__init__(mode=mode, uniform_sampling=uniform_sampling,
-                                      joint_transform_list=joint_transform_list,
+                                      filter_data=filter_data, joint_transform_list=joint_transform_list,
                                       img_transform=img_transform, label_transform=label_transform)
+
+        if self.uniform_sampling and self.filter_data:
+            raise ValueError("[*] Please tune one of off.")
 
         if self.uniform_sampling:
             self.records = uniform.build_classwised_sets(self.all_data, self.num_classes,
                                                          self.mode, cfg.DATASET.ID_TO_TRAINID)
 
+            self.build_epoch()
+        elif self.filter_data:
+            self.records = filter.build_filter_sets(self.all_data, self.num_classes, self.mode,
+                                                    cfg.DATASET.ID_TO_TRAINID)
             self.build_epoch()
         else:
             self.data = self.all_data
@@ -43,9 +52,12 @@ class DataSet(BaseDataset):
 
         return imgs
 
+    def filter_one_class(self):
+        pass
+
 
 if __name__ == '__main__':
-    dataset = DataSet(mode="train", uniform_sampling=True)
+    dataset = DataSet(mode="train", uniform_sampling=False, filter_data=True)
     print(len(dataset))
     image, mask, img_name = dataset[0]
     print(f"[*] image name: {img_name}")

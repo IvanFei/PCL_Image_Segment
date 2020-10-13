@@ -79,6 +79,7 @@ class DataSet(data.Dataset):
 
             mask = np.zeros_like(mask_raw)
             mask[mask_raw == self.trainid_to_id[self.class_id]] = 1  # binary classify
+            mask = 1 - mask
             edge = self._edge_creator(mask)
             # flip transform
             if random.uniform(0, 1) > 0.5:

@@ -32,10 +32,11 @@ def get_args():
     data = parser.add_argument_group("Data")
     data.add_argument("--dataset", type=str, default="PCL")
     data.add_argument("--num_workers", type=int, default=8)
-    data.add_argument("--uniform_sampling", type=bool, default=False)
+    data.add_argument("--uniform_sampling", action="store_true")
     data.add_argument("--crop_size", type=int, default=256)
     data.add_argument("--scale_min", type=float, default=1.0)
     data.add_argument("--scale_max", type=float, default=1.5)
+    data.add_argument("--data_filter", action="store_true")
 
     net = parser.add_argument_group("Net")
     net.add_argument("--load_path", type=str, default="")
@@ -66,7 +67,7 @@ def get_args():
     train.add_argument("--num_epochs", type=int, default=100)
     train.add_argument("--num_steps", type=int, default=3e5)  # for lr schedule
     train.add_argument("--val_freq", type=int, default=1000)
-    train.add_argument("--retrain", type=bool, default=False)
+    train.add_argument("--retrain", action="store_true")
 
     gpu = parser.add_argument_group("GPU")
     gpu.add_argument("--gpu_id", type=int, default=0)
@@ -83,7 +84,7 @@ def main(args):
     val_joint_transform_list, val_img_transform, val_label_transform = None, None, None
 
     train_dataset = DataSet(mode="train", uniform_sampling=args.uniform_sampling,
-                            joint_transform_list=train_joint_transform_list,
+                            filter_data=args.data_filter, joint_transform_list=train_joint_transform_list,
                             img_transform=train_img_transform, label_transform=train_label_transform)
     val_dataset = DataSet(mode="val", uniform_sampling=False, joint_transform_list=val_joint_transform_list,
                           img_transform=val_img_transform, label_transform=val_label_transform)
@@ -133,7 +134,7 @@ def main(args):
 
         train_loss, step, maxscore = train(args, train_loader, val_loader, model, val_criterion, optimizer,
                                            lr_scheduler, epoch, step, tb, maxscore, cuda=args.cuda)
-        if args.uniform_sampling:
+        if args.uniform_sampling or args.data_filter:
             train_loader.dataset.build_epoch()
 
 
