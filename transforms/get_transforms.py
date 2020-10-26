@@ -19,7 +19,7 @@ def get_transforms(args, mode="train"):
 
         # TODO add another joint transforms
         joint_transform_list += [joint_transforms.RandomHorizontallyFlip()]  # default percent is 0.5
-        joint_transform_list += [joint_transforms.RandomRotate90(p=0.9)]
+        joint_transform_list += [joint_transforms.RandomRotate90(p=0.5)]
 
         # image transform
         input_transform = []

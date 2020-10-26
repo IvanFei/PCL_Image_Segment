@@ -72,12 +72,12 @@ class BaseDataset(data.Dataset):
                and len(self.trainid_to_id) == len(self.id_to_trainid), "Unassign/error assign the id to trained."
 
         if mask_fn is None:
-            assert self.mode == "test", "Mask is None, the mode should be test."
+            assert "test" in self.mode, "Mask is None, the mode should be test."
 
         img = cv2.imread(img_fn, cv2.IMREAD_UNCHANGED)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-        if self.mode != "test":
+        if "test" not in self.mode:
             mask_raw = cv2.imread(mask_fn, cv2.IMREAD_UNCHANGED)
 
             mask = np.zeros_like(mask_raw)

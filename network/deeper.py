@@ -24,8 +24,10 @@ class DeeperS8(nn.Module):
         self.conv_up5 = nn.Conv2d(256, num_classes, kernel_size=1, bias=False)
 
     def forward(self, inputs):
-        assert 'images' in inputs
-        x = inputs['images']
+        if isinstance(inputs, dict):
+            x = inputs['images']
+        else:
+            x = inputs
 
         s2_features, s4_features, final_features = self.backbone(x)
         s2_features = self.convs2(s2_features)
@@ -47,6 +49,7 @@ class DeeperS8(nn.Module):
             return self.criterion(x, gts)
         else:
             return {"pred": x}
+            # return x
 
 
 def DeeperX71(num_classes, criterion=None):

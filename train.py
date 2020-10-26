@@ -44,7 +44,7 @@ def get_args():
     net.add_argument("--model_name", type=str, required=True)
 
     file = parser.add_argument_group("File")
-    file.add_argument("--log_dir", type=str, default="./logs")
+    file.add_argument("--log_dir", type=str, default="./final_logs")
 
     optimizer = parser.add_argument_group("Optimizer")
     optimizer.add_argument("--lr", type=float, default=0.01)

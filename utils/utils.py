@@ -119,9 +119,33 @@ def write_mask(args, masks, img_names, save_dir="prediction"):
         for c in cfg.DATASET.TRAINID_TO_ID.keys():
             seg[mask == c] = cfg.DATASET.TRAINID_TO_ID[c]
 
-        save_mask =seg.astype(np.uint16)
+        save_mask = seg.astype(np.uint16)
 
         cv2.imwrite(os.path.join(res_dir, img_name + ".png"), save_mask)
+
+
+def write_pred(args, probs, preds, img_names, save_dir="prediction"):
+    res_dir = os.path.join(args.model_dir, save_dir)
+    mask_dir = os.path.join(res_dir, "mask")
+    pred_dir = os.path.join(res_dir, "probs")
+    if not os.path.exists(res_dir):
+        os.makedirs(res_dir)
+    if not os.path.exists(mask_dir):
+        os.makedirs(mask_dir)
+    if not os.path.exists(pred_dir):
+        os.makedirs(pred_dir)
+
+    batch_size, H, W = preds.shape
+    for i in range(batch_size):
+        img_name = img_names[i]
+        prob, mask = probs[i], preds[i]
+        seg = np.zeros([H, W]) * cfg.DATASET.IGNORE_LABEL
+        for c in cfg.DATASET.TRAINID_TO_ID.keys():
+            seg[mask == c] = cfg.DATASET.TRAINID_TO_ID[c]
+
+        np.save(os.path.join(pred_dir, img_name + ".npy"), prob)
+        save_mask = seg.astype(np.uint16)
+        cv2.imwrite(os.path.join(mask_dir, img_name + ".png"), save_mask)
 
 
 def get_class_weight():

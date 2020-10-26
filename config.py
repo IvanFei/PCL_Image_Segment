@@ -24,17 +24,22 @@ __C.TRAIN = AttrDict()
 
 # DATASET
 __C.DATASET = AttrDict()
-__C.DATASET.PCL_DIR = os.path.join(__C.ASSETS_PATH, "pcl_image_segment")
+# __C.DATASET.PCL_DIR = os.path.join(__C.ASSETS_PATH, "pcl_image_segment")
+__C.DATASET.PCL_DIR = os.path.join(__C.ASSETS_PATH, "remote_sensing")
 
-# __C.DATASET.MEAN = [0.485, 0.456, 0.406]
-# __C.DATASET.STD = [0.229, 0.224, 0.225]
-__C.DATASET.MEAN = [0.355, 0.384, 0.359]
-__C.DATASET.STD = [0.411, 0.434, 0.416]
+__C.DATASET.MEAN = [0.485, 0.456, 0.406]
+__C.DATASET.STD = [0.229, 0.224, 0.225]
+# __C.DATASET.MEAN = [0.355, 0.384, 0.359]
+# __C.DATASET.STD = [0.411, 0.434, 0.416]
 
-__C.DATASET.NUM_CLASSES = 8
-__C.DATASET.IGNORE_LABEL = 8
-__C.DATASET.ID_TO_TRAINID = {100: 0, 200: 1, 300: 2, 400: 3, 500: 4, 600: 5, 700: 6, 800: 7}
-__C.DATASET.TRAINID_TO_ID = {0: 100, 1: 200, 2: 300, 3: 400, 4: 500, 5: 600, 6: 700, 7: 800}
+__C.DATASET.NUM_CLASSES = 17
+__C.DATASET.IGNORE_LABEL = 17
+# __C.DATASET.ID_TO_TRAINID = {100: 0, 200: 1, 300: 2, 400: 3, 500: 4, 600: 5, 700: 6, 800: 7}
+__C.DATASET.ID_TO_TRAINID = {1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: 8, 10: 9, 11: 10,
+                             12: 11, 13: 12, 14: 13, 15: 14, 16: 15, 17: 16}
+# __C.DATASET.TRAINID_TO_ID = {0: 100, 1: 200, 2: 300, 3: 400, 4: 500, 5: 600, 6: 700, 7: 800}
+__C.DATASET.TRAINID_TO_ID = {0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7, 7: 8, 8: 9, 9: 10, 10: 11, 11: 12, 12: 13,
+                             13: 14, 14: 15, 15: 16, 16: 17}
 
 __C.DATASET.CLASS_UNIFORM_PCT = 0.5
 __C.DATASET.FILTER_DATA = False
