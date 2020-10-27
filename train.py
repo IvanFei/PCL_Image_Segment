@@ -186,7 +186,6 @@ def train(args, train_loader, val_loader, model, val_criterion, optimizer, lr_sc
             tb.scalar_summary("val/mIoU", val_scores["MIOU"], step)
             tb.scalar_summary("val/FWIoU", val_scores["FWIOU"], step)
 
-            is_best = val_scores["FWIOU"] >= max_score
             max_score = max(max_score, val_scores["FWIOU"])
 
             logger.info(f"[*] Step: {step}, max_score: {max_score}.")
@@ -240,6 +239,7 @@ def validation(args, dataloader, model, criterion, step, cuda=False, is_record=T
     scores["loss"] = loss.avg
     scores["PA"] = segmeter.Pixel_Accuracy()
     scores["MPA"] = segmeter.Mean_Pixel_Accuracy()
+    scores["IOU"] = segmeter.Intersection_over_Union()
     scores["MIOU"] = segmeter.Mean_Intersection_over_Union()
     scores["FWIOU"] = segmeter.Frequency_Weighted_Intersection_over_Union()
 
