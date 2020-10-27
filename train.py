@@ -180,11 +180,14 @@ def train(args, train_loader, val_loader, model, val_criterion, optimizer, lr_sc
 
             logger.info(f"| model_name {args.model_name} | step: {step} | PA: {val_scores['PA']} "
                         f"| mPA: {val_scores['MPA']} | mIoU: {val_scores['MIOU']} | FWIoU: {val_scores['FWIOU']}")
+            logger.info(f"| model_name {args.model_name} | step: {step} | IOU: {val_scores['IOU']}")
 
             tb.scalar_summary("val/PA", val_scores["PA"], step)
             tb.scalar_summary("val/mPA", val_scores["MPA"], step)
             tb.scalar_summary("val/mIoU", val_scores["MIOU"], step)
             tb.scalar_summary("val/FWIoU", val_scores["FWIOU"], step)
+            for c, iou_c in enumerate(val_scores["IOU"]):
+                tb.scalar_summary(f"val/IOU_{cfg.DATASET.TRAINID_TO_ID[c]}", iou_c, step)
 
             max_score = max(max_score, val_scores["FWIOU"])
 
