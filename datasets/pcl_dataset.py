@@ -46,7 +46,7 @@ class DataSet(BaseDataset):
                                                     cfg.DATASET.ID_TO_TRAINID)
             self.build_epoch()
         else:
-            self.data = self.all_data[:100]
+            self.data = self.all_data
 
     def build_data(self):
         imgs = self.find_images(self.img_root, self.mask_root, self.img_ext, self.mask_ext)
