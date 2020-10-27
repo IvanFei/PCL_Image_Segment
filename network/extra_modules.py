@@ -279,8 +279,7 @@ def old_make_attn_head(in_ch, bot_ch, out_ch):
     return attn
 
 
-def mask_attn_head(in_ch, out_ch):
-    bot_ch = 256
+def mask_attn_head(in_ch, out_ch, bot_ch=256):
     od = OrderedDict([("conv0", nn.Conv2d(in_ch, bot_ch, kernel_size=3, padding=1, bias=False)),
                       ("bn0", Norm2d(bot_ch)),
                       ("re0", nn.ReLU(inplace=True))])

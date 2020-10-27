@@ -64,6 +64,7 @@ if __name__ == '__main__':
     print(f"[*] image name: {img_name}")
     print(f"[*] image shape: {image.shape}")
     print(f"[*] mask shape: {mask.shape}")
+    print(f"[*] mask classes: {torch.unique(mask)}")
 
     data_loader = data.DataLoader(dataset, shuffle=True, num_workers=4, drop_last=True, batch_size=4)
     for data_batch in data_loader:
@@ -71,6 +72,7 @@ if __name__ == '__main__':
         print(f"[*] image name: {img_name}")
         print(f"[*] image shape: {image.shape}")
         print(f"[*] mask shape: {mask.shape}")
+        print(f"[*] mask classes: {torch.unique(mask)}")
         break
 
 
