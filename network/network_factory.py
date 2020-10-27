@@ -3,6 +3,10 @@ import importlib
 import torch
 
 from config import cfg
+from utils.utils import get_logger
+
+
+logger = get_logger()
 
 
 def get_net(args, criterion, cuda=False):
@@ -13,7 +17,7 @@ def get_net(args, criterion, cuda=False):
     network = "network." + args.arch
     net = get_model(network, num_classes=cfg.DATASET.NUM_CLASSES, criterion=criterion)
     num_params = sum([param.nelement() for param in net.parameters()])
-    print("[*] Model {} params = {:2.1f}M".format(network, num_params / 1000000))
+    logger.info("[*] Model {} params = {:2.1f}M".format(network, num_params / 1000000))
 
     if cuda:
         net.cuda()

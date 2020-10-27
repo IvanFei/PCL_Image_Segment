@@ -11,7 +11,8 @@ from torch.utils import data
 
 from config import cfg
 from evaluation.evaluator import AverageMeter, SegmentMeter
-from utils.utils import prepare_dirs, cfg_parser, get_logger, save_args, TensorBoard, save_checkpoint, get_learning_rate
+from utils.utils import prepare_dirs, cfg_parser, get_logger, save_args, TensorBoard
+from utils.utils import save_model, save_checkpoint, get_learning_rate, load_model
 from datasets.pcl_dataset import DataSet
 from network.network_factory import get_model, get_net
 from loss.loss_factory import get_loss
@@ -41,7 +42,7 @@ def get_args():
     net = parser.add_argument_group("Net")
     net.add_argument("--load_path", type=str, default="")
     net.add_argument("--arch", type=str, required=True)
-    net.add_argument("--model_name", type=str, required=True)
+    net.add_argument("--model_name", type=str, default="")
 
     file = parser.add_argument_group("File")
     file.add_argument("--log_dir", type=str, default="./final_logs")
@@ -66,7 +67,7 @@ def get_args():
     train.add_argument("--log_step", type=int, default=50)
     train.add_argument("--num_epochs", type=int, default=100)
     train.add_argument("--num_steps", type=int, default=3e5)  # for lr schedule
-    train.add_argument("--val_freq", type=int, default=1000)
+    train.add_argument("--val_freq", type=int, default=10)
     train.add_argument("--retrain", action="store_true")
 
     gpu = parser.add_argument_group("GPU")
@@ -108,14 +109,15 @@ def main(args):
     maxscore = 0
 
     if args.load_path:
-        if not (os.path.isfile(args.load_path) and args.load_path.endswith("pth")):
+        if not os.path.exists(args.load_path):
             raise ValueError("[*] The `load_path` should be exists and end with pth.")
 
-        checkpoint = torch.load(args.load_path)
+        # checkpoint = torch.load(args.load_path)
+        checkpoint = load_model(args, save_criterion="FWIOU")
         model.load_state_dict(checkpoint["state_dict"])
         if not args.retrain:
             start_epoch = checkpoint["epoch"]
-            start_step = checkpoint["step"]
+            start_step = checkpoint["step"] + 1
 
             optimizer.load_state_dict(checkpoint["optimizer"])
         else:
@@ -200,7 +202,8 @@ def train(args, train_loader, val_loader, model, val_criterion, optimizer, lr_sc
                 "optimizer": optimizer.state_dict()
             }
 
-            save_checkpoint(state_dict, step, is_best, args)
+            # save_checkpoint(state_dict, step, is_best, args)
+            save_model(state_dict, step, args, val_scores, max_save_num=5, save_criterion="FWIOU")
 
         step += 1
         pbar.update(1)
@@ -239,20 +242,6 @@ def validation(args, dataloader, model, criterion, step, cuda=False, is_record=T
     scores["MPA"] = segmeter.Mean_Pixel_Accuracy()
     scores["MIOU"] = segmeter.Mean_Intersection_over_Union()
     scores["FWIOU"] = segmeter.Frequency_Weighted_Intersection_over_Union()
-
-    # save the scores
-    if is_record:
-        checkpoint_tracker_path = os.path.join(args.model_dir, "checkpoint_tracker.json")
-        if os.path.exists(checkpoint_tracker_path):
-            with open(checkpoint_tracker_path, "r") as f:
-                checkpoint_tracker = json.load(f)
-        else:
-            checkpoint_tracker = {}
-
-        checkpoint_tracker["step_{}".format(step)] = scores["FWIOU"]
-
-        with open(checkpoint_tracker_path, "w") as f:
-            json.dump(checkpoint_tracker, f)
 
     model.train()
 

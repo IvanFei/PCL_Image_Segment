@@ -1,5 +1,6 @@
 import os
 import cv2
+import glob
 import torch
 import logging
 import json
@@ -41,6 +42,12 @@ def prepare_dirs(args):
     if args.model_name:
         if os.path.exists(os.path.join(args.log_dir, args.model_name)):
             raise FileExistsError(f"Model {args.model_name} already exists!!! give a different name.")
+    else:
+        if args.load_path:
+            if args.load_path.endswith(".pth"):
+                args.model_dir = args.load_path.rsplit("/", 1)[0]
+            else:
+                args.model_dir = args.load_path
 
     if not hasattr(args, "model_dir"):
         args.model_dir = os.path.join(args.log_dir, args.model_name)
@@ -96,6 +103,97 @@ def save_checkpoint(state, step, is_best, args):
         cpy_file = os.path.join(args.model_dir, "model-best.pth")
         shutil.copyfile(filepath, cpy_file)
         logger.info(f"[*] SAVED successfully best model at {cpy_file}")
+
+
+def save_model(state, step, args, save_criteria_score=None, max_save_num=5, save_criterion="FWIOU"):
+    filepath = os.path.join(args.model_dir, f"model-step-{step}.pth")
+    torch.save(state, filepath)
+    logger.info(f"[*] SAVED: {filepath}")
+    steps = get_save_models_info(args)
+
+    if save_criteria_score is not None:
+        checkpoint_path = os.path.join(args.model_dir, "checkpoint_tracker.dat")
+        if os.path.exists(checkpoint_path):
+            checkpoint_tracker = torch.load(checkpoint_path)
+        else:
+            checkpoint_tracker = {}
+        key = f"step_{step}"
+        value = save_criteria_score
+        checkpoint_tracker[key] = value
+        if len(checkpoint_tracker) > max_save_num:
+            low_value = 10000.0
+            remove_key = None
+            for key, value in checkpoint_tracker.items():
+                if low_value > value[save_criterion]:
+                    remove_key = key
+                    low_value = value[save_criterion]
+
+            del checkpoint_tracker[remove_key]
+
+            remove_step = remove_key.split("_")[1]
+            paths = glob.glob(os.path.join(args.model_dir, f"model-step-{remove_step}.pth"))
+            for path in paths:
+                remove_file(path)
+
+        torch.save(checkpoint_tracker, checkpoint_path)
+    else:
+        for st in steps[:-max_save_num]:
+            paths = glob.glob(os.path.join(args.model_dir, f"model-step-{st}.pth"))
+            for path in paths:
+                remove_file(path)
+
+
+def load_model(args, save_criterion="FWIOU"):
+
+    if args.load_path.endswith(".pth"):
+        checkpoints = torch.load(args.load_path)
+        logger.info(f"[*] LOADED: {args.load_path}")
+    else:
+        checkpoint_path = os.path.join(args.model_dir, "checkpoint_tracker.dat")
+        if os.path.exists(checkpoint_path):
+            checkpoint_tracker = torch.load(checkpoint_path)
+            best_key = None
+            best_score = -10000.0
+            for key, value in checkpoint_tracker.items():
+                if best_score < value[save_criterion]:
+                    best_score = value[save_criterion]
+                    best_key = key
+            step = int(best_key.split("_")[1])
+        else:
+            steps = get_save_models_info(args)
+
+            if len(steps) == 0:
+                logger.warning(f"[!] No checkpoint found in {args.model_dir}")
+                return
+
+            step = max(steps)
+
+        load_path = f"{args.load_path}/model-step-{step}.pth"
+        logger.info(f"[*] LOADED: {load_path}")
+        checkpoints = torch.load(load_path)
+
+    return checkpoints
+
+
+def get_save_models_info(args):
+    paths = glob.glob(os.path.join(args.model_dir, "*.pth"))
+    paths.sort()
+    steps = []
+
+    for path in paths:
+        basename = os.path.basename(path.rsplit(".", 1)[0])
+        step = int(basename.split("-")[2])
+        steps.append(step)
+
+    steps.sort()
+
+    return steps
+
+
+def remove_file(path):
+    if os.path.exists(path):
+        logger.info(f"[*] REMOVED: {path}")
+        os.remove(path)
 
 
 def get_learning_rate(optimizer):

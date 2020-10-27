@@ -27,6 +27,7 @@ def get_optimizer(args, net):
         raise NotImplementedError
 
     if args.lr_schedule == "step":
+        # step_size 30 gamma 0.2
         scheduler = lr_scheduler.StepLR(optimizer, step_size=args.step_size,
                                         gamma=args.gamma, last_epoch=-1)
 
@@ -37,7 +38,7 @@ def get_optimizer(args, net):
                                              gamma=args.gamma, last_epoch=args.last_epoch)
 
     elif args.lr_schedule == "reduce_lr_on_plateau":
-        scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode="max", factor=0.1, patience=10, threshold=0.001,
+        scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode="max", factor=0.1, patience=8, threshold=0.0005,
                                                    threshold_mode="rel", cooldown=0, min_lr=0)
 
     elif args.lr_schedule == "poly":
