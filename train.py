@@ -67,7 +67,7 @@ def get_args():
     train.add_argument("--log_step", type=int, default=50)
     train.add_argument("--num_epochs", type=int, default=100)
     train.add_argument("--num_steps", type=int, default=3e5)  # for lr schedule
-    train.add_argument("--val_freq", type=int, default=10)
+    train.add_argument("--val_freq", type=int, default=1000)
     train.add_argument("--retrain", action="store_true")
 
     gpu = parser.add_argument_group("GPU")
