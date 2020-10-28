@@ -60,9 +60,9 @@ class MscaleDeeperS8(nn.Module):
        stride 8 only.
     """
 
-    MSCALE_LO_SCALE = 0.5
+    MSCALE_LO_SCALE = 0.875
     SUPERVISED_MSCALE_WT = 0.05
-    N_SCALES = [0.5, 1.0, 2.0]
+    N_SCALES = [0.875, 1.0, 1.125]
 
     def __init__(self, num_classes, trunk="xception71", criterion=None, dpc=False):
         super(MscaleDeeperS8, self).__init__()
