@@ -15,6 +15,54 @@ from .config import cfg
 # from model_define import init_model
 
 
+def get_size(w, h, divisor=32):
+    w = (w // divisor) * divisor
+    h = (h // divisor) * divisor
+
+    return w, h
+
+
+def cut_image(img, w, h):
+    imgs = []
+    num_patchs = math.ceil(w / 256)
+    sum_strides = num_patchs * 256 - w
+    stride_per_patch = int(sum_strides / (num_patchs - 1)) if num_patchs > 1 else 0
+    inter_per_patch = 256 - stride_per_patch
+    idxs = []
+    for i in range(num_patchs):
+        idx = i * inter_per_patch
+        idx = min(idx, w - 256)
+        idxs.append(idx)
+
+    axis_list = []
+    for r_idx in idxs:
+        for c_idx in idxs:
+            axis_list.append((r_idx, c_idx))
+            imgs.append(img[:, r_idx:r_idx+256, c_idx:c_idx+256])
+
+    return imgs, axis_list
+
+
+def cut_image_new(img, w, h, overlap=32):
+    imgs = []
+    size_per_img = 256 - overlap
+    num_patchs = math.ceil(w / size_per_img)
+    inter_per_patch = size_per_img
+    idxs = []
+    for i in range(num_patchs):
+        idx = i * inter_per_patch
+        idx = min(idx, w - 256)
+        idxs.append(idx)
+
+    axis_list = []
+    for r_idx in idxs:
+        for c_idx in idxs:
+            axis_list.append((r_idx, c_idx))
+            imgs.append(img[:, r_idx:r_idx+256, c_idx:c_idx+256])
+
+    return imgs, axis_list
+
+
 def write_mask(mask, img_name, output_dir):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -45,36 +93,35 @@ def predict(model, input_path, output_dir):
     img_name, _ = os.path.splitext(os.path.basename(input_path))
     img = cv2.imread(input_path, cv2.IMREAD_UNCHANGED)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
+    # TODO: save show
+    # cv2.imwrite(os.path.join(output_dir, img_name + "_vis.png"), img)
     w, h, c = img.shape
 
-    img = Image.fromarray(img.astype(np.uint8))
-    img = img_transform(img)
-
     # TODO: cut the img to 256 x 256
-    imgs = []
     batch_size = 16
-    num_patchs = math.ceil(w / 256)
-    sum_strides = num_patchs * 256 - w
-    stride_per_patch = int(sum_strides / (num_patchs - 1)) if num_patchs > 1 else 0
-    inter_per_patch = 256 - stride_per_patch
-    idxs = []
-    for i in range(num_patchs):
-        idx = i * inter_per_patch
-        idx = min(idx, w - 256)
-        idxs.append(idx)
 
-    axis_list = []
-    for r_idx in idxs:
-        for c_idx in idxs:
-            axis_list.append((r_idx, c_idx))
-            imgs.append(img[:, r_idx:r_idx+256, c_idx:c_idx+256])
+    # plan A: no resize and cut with 256 x 256 including overlap
+    # img = Image.fromarray(img.astype(np.uint8))
+    # img = img_transform(img)
+    # cw, ch = w, h
+    # imgs, axis_list = cut_image(img, w, h)
+
+    # plan B: resize with 32 x 32 and cut with 256 x 256  including overlap
+    # resize
+    cw, ch = get_size(w, h, divisor=32)
+    img_resize = cv2.resize(img, (cw, ch), interpolation=cv2.INTER_LINEAR)
+    img = Image.fromarray(img_resize.astype(np.uint8))
+    img = img_transform(img)
+    if cw <= 384:
+        imgs, axis_list = cut_image(img, cw, ch)
+    else:
+        imgs, axis_list = cut_image_new(img, cw, ch, overlap=32)
 
     num_imgs = len(imgs)
     num_epochs = math.ceil(num_imgs / batch_size)
 
-    result = np.zeros([cfg.DATASET.NUM_CLASSES, h, w])
-    counter = np.zeros([cfg.DATASET.NUM_CLASSES, h, w])
+    result = np.zeros([cfg.DATASET.NUM_CLASSES, ch, cw])
+    counter = np.zeros([cfg.DATASET.NUM_CLASSES, ch, cw])
     for epoch in range(num_epochs):
         end_idx = min((epoch + 1) * batch_size, num_imgs)
         img_batch_list = imgs[epoch * batch_size: end_idx]
@@ -99,12 +146,14 @@ def predict(model, input_path, output_dir):
 
     result = result / counter
     result = np.argmax(result, axis=0)
+    result = cv2.resize(result, (w, h), interpolation=cv2.INTER_NEAREST)
 
     write_mask(result, img_name, output_dir)
     # print("[*] Cost time: {}".format(time.time() - start))
 
 
 # if __name__ == '__main__':
+#     os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 #     img_dir = "/nfs/users/huangfeifei/dataset/remote_sensing/test_multi_scale/image"
 #     img_paths = glob.glob(img_dir + '/' + '*')  # 后台存储的测试集图片路径
 #     print("[*] image len: {}".format(len(img_paths)))
