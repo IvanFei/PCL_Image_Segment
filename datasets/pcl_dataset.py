@@ -53,12 +53,9 @@ class DataSet(BaseDataset):
 
         return imgs
 
-    def filter_one_class(self):
-        pass
-
 
 if __name__ == '__main__':
-    dataset = DataSet(mode="train", uniform_sampling=False, filter_data=False)
+    dataset = DataSet(mode="train", uniform_sampling=False, filter_data=True)
     print(len(dataset))
     image, mask, img_name = dataset[0]
     print(f"[*] image name: {img_name}")
