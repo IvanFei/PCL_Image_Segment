@@ -32,7 +32,6 @@ from PIL import Image, ImageOps
 import numpy as np
 import random
 from config import cfg
-from albumentations.augmentations import functional as aaf
 
 
 class Compose(object):
