@@ -114,7 +114,7 @@ def main(args):
 
         # checkpoint = torch.load(args.load_path)
         checkpoint = load_model(args, save_criterion="FWIOU")
-        model.load_state_dict(checkpoint["state_dict"])
+        model.load_state_dict(checkpoint["state_dict"], strict=False)
         if not args.retrain:
             start_epoch = checkpoint["epoch"]
             start_step = checkpoint["step"] + 1

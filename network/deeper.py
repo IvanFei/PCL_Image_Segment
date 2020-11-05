@@ -74,10 +74,15 @@ class MscaleDeeperS8(nn.Module):
 
         self.convs2 = nn.Conv2d(s2_ch, 32, kernel_size=1, bias=False)
         self.convs4 = nn.Conv2d(s4_ch, 64, kernel_size=1, bias=False)
-        self.conv_up1 = nn.Conv2d(aspp_out_ch, 256, kernel_size=3, padding=1, bias=False)
-        self.conv_up2 = ConvBnRelu(256 + 64, 256, kernel_size=3, padding=1)
-        self.conv_up3 = ConvBnRelu(256 + 32, 256, kernel_size=3, padding=1)
-        self.conv_up5 = nn.Conv2d(256, num_classes, kernel_size=3, padding=1, bias=False)
+        # Change to DeeperS8
+        # self.conv_up1 = nn.Conv2d(aspp_out_ch, 256, kernel_size=3, padding=1, bias=False)
+        # self.conv_up2 = ConvBnRelu(256 + 64, 256, kernel_size=3, padding=1)
+        # self.conv_up3 = ConvBnRelu(256 + 32, 256, kernel_size=3, padding=1)
+        # self.conv_up5 = nn.Conv2d(256, num_classes, kernel_size=3, padding=1, bias=False)
+        self.conv_up1 = nn.Conv2d(aspp_out_ch, 256, kernel_size=1, bias=False)
+        self.conv_up2 = ConvBnRelu(256 + 64, 256, kernel_size=5, padding=2)
+        self.conv_up3 = ConvBnRelu(256 + 32, 256, kernel_size=5, padding=2)
+        self.conv_up5 = nn.Conv2d(256, num_classes, kernel_size=1, bias=False)
 
         self.scale_attn = mask_attn_head(in_ch=256, out_ch=1, bot_ch=128)
 
@@ -191,6 +196,16 @@ class MscaleDeeperS8(nn.Module):
 
         return self.two_scale_forward(inputs)
 
+    def load_pretrained_weight(self, weight_pth="/nfs/users/huangfeifei/PCL_Image_Segment/final_logs/DeeperX71_ASPP_CE_Adam/model-step-300999.pth"):
+        weight = torch.load(weight_pth)
+        state_dict = weight["state_dict"]
+        new_state_dict = self.state_dict()
+        for k, v in state_dict.items():
+            if k in new_state_dict:
+                new_state_dict[k] = v
+
+        self.load_state_dict(new_state_dict)
+
 
 def DeeperX71(num_classes, criterion=None):
 
@@ -217,9 +232,13 @@ def DeeperX71_DPC_Mscale(num_classes, criterion=None):
 
 
 if __name__ == '__main__':
-    model = DeeperX71_DPC_Mscale(num_classes=80)
+    model = DeeperX71_ASPP_Mscale(num_classes=15)
 
     print(model.state_dict().keys())
 
+    weight_pth = "/nfs/users/huangfeifei/PCL_Image_Segment/final_logs/DeeperX71_ASPP_CE_Adam/model-step-300999.pth"
+    state_dict = torch.load(weight_pth)["state_dict"]
+    print(state_dict.keys())
+    model.load_state_dict(state_dict, strict=False)
 
 
