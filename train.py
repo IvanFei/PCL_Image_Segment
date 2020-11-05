@@ -37,7 +37,7 @@ def get_args():
     data.add_argument("--crop_size", type=int, default=256)
     data.add_argument("--scale_min", type=float, default=1.0)
     data.add_argument("--scale_max", type=float, default=1.5)
-    data.add_argument("--data_filter", action="store_true")
+    data.add_argument("-f", "--data_filter", action="store_true")
 
     net = parser.add_argument_group("Net")
     net.add_argument("--load_path", type=str, default="")
@@ -68,7 +68,7 @@ def get_args():
     train.add_argument("--num_epochs", type=int, default=200)
     train.add_argument("--num_steps", type=int, default=3e5)  # for lr schedule
     train.add_argument("--val_freq", type=int, default=1000)
-    train.add_argument("--retrain", action="store_true")
+    train.add_argument("-r", "--retrain", action="store_true")
 
     gpu = parser.add_argument_group("GPU")
     gpu.add_argument("--gpu_id", type=int, default=0)
