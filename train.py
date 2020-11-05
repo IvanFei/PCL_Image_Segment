@@ -65,7 +65,7 @@ def get_args():
     train = parser.add_argument_group("Train")
     train.add_argument("--batch_size", type=int, default=16)
     train.add_argument("--log_step", type=int, default=50)
-    train.add_argument("--num_epochs", type=int, default=100)
+    train.add_argument("--num_epochs", type=int, default=200)
     train.add_argument("--num_steps", type=int, default=3e5)  # for lr schedule
     train.add_argument("--val_freq", type=int, default=1000)
     train.add_argument("--retrain", action="store_true")
