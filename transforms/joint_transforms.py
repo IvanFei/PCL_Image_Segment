@@ -32,6 +32,7 @@ from PIL import Image, ImageOps
 import numpy as np
 import random
 from config import cfg
+from albumentations.augmentations import functional as aaf
 
 
 class Compose(object):
@@ -292,6 +293,50 @@ class RandomRotate90(object):
             return img.transpose(self.rotate_flag[idx]), mask.transpose(self.rotate_flag[idx])
 
         return img, mask
+
+
+class RandomZoomIn(object):
+    def __init__(self, sizes=[256, 288, 320], p=0.5):
+        self.sizes = sizes
+        self.p = p
+
+    def __call__(self, img, mask):
+        if random.uniform(0, 1) < 0.5:
+            idx = random.randint(0, len(self.sizes) - 1)
+            size = self.sizes[idx]
+            return img.resize((size, size), Image.BICUBIC), mask.resize((size, size), Image.NEAREST)
+
+
+class RandomCropping(object):
+    def __init__(self, size=256):
+        self.size = size
+
+    def __call__(self, img, mask):
+        h_start, w_start = random.uniform(0, 1), random.uniform(0, 1)
+        height, width = img.shape[:2]
+        x1, y1, x2, y2 = self.get_random_crop_coords(height, width, self.size, self.size, h_start, w_start)
+        img, mask = img[y1:y2, x1:x2], mask[y1:y2, x1:x2]
+        return img, mask
+
+    @staticmethod
+    def get_random_crop_coords(height, width, crop_height, crop_width, h_start, w_start):
+        y1 = int((height - crop_height) * h_start)
+        y2 = y1 + crop_height
+        x1 = int((width - crop_width) * w_start)
+        x2 = x1 + crop_width
+        return x1, y1, x2, y2
+
+
+class RandomZoomOut(object):
+    def __init__(self, sizes=[160, 192, 224, 256], padding_mode="reflect", padding_value=None,  p=0.5):
+        self.sizes = sizes
+        self.padding_mode = padding_mode
+        self.padding_value = padding_value
+        self.p = p
+
+    def __call__(self, img, mask):
+        if random.uniform(0, 1) < 0.5:
+            pass
 
 
 class FreeScale(object):
