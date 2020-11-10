@@ -38,7 +38,7 @@ def calc_mean_var(img_dir, suffix="tif"):
 def args_parse():
     parser = argparse.ArgumentParser("Args")
     parser.add_argument("--image_dir", type=str,
-                        default="/nfs/users/huangfeifei/dataset/pcl_image_segment/train/image")
+                        default="/nfs/users/huangfeifei/dataset/remote_sensing/train/image")
     parser.add_argument("--suffix", type=str, default="tif")
 
     args = parser.parse_args()

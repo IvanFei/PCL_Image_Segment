@@ -15,7 +15,7 @@ class DeeperS8(nn.Module):
         super(DeeperS8, self).__init__()
 
         self.criterion = criterion
-        self.backbone, s2_ch, s4_ch, high_level_ch = get_trunk(trunk_name=trunk, output_stride=8)
+        self.backbone, s2_ch, s4_ch, high_level_ch = get_trunk(trunk_name=trunk, output_stride=8, pretrained=True)
         # TODO: DPC modules
         self.aspp, aspp_out_ch = get_aspp(high_level_ch, bottleneck_ch=256, output_stride=8, dpc=dpc)
 
@@ -68,7 +68,8 @@ class MscaleDeeperS8(nn.Module):
         super(MscaleDeeperS8, self).__init__()
 
         self.criterion = criterion
-        self.backbone, s2_ch, s4_ch, high_level_ch = get_trunk(trunk_name=trunk, output_stride=8)
+        # TODO pretrained backbone is False, to use random init
+        self.backbone, s2_ch, s4_ch, high_level_ch = get_trunk(trunk_name=trunk, output_stride=8, pretrained=True)
 
         self.aspp, aspp_out_ch = get_aspp(high_level_ch, bottleneck_ch=256, output_stride=8, dpc=dpc)
 

@@ -27,10 +27,15 @@ __C.DATASET = AttrDict()
 # __C.DATASET.PCL_DIR = os.path.join(__C.ASSETS_PATH, "pcl_image_segment")
 __C.DATASET.PCL_DIR = os.path.join(__C.ASSETS_PATH, "remote_sensing")
 
-__C.DATASET.MEAN = [0.485, 0.456, 0.406]
-__C.DATASET.STD = [0.229, 0.224, 0.225]
+# ImageNet Mean Std
+# __C.DATASET.MEAN = [0.485, 0.456, 0.406]
+# __C.DATASET.STD = [0.229, 0.224, 0.225]
+# Preliminary Contest Mean Std
 # __C.DATASET.MEAN = [0.355, 0.384, 0.359]
 # __C.DATASET.STD = [0.411, 0.434, 0.416]
+# Quarter-Final Mean Std
+__C.DATASET.MEAN = [0.417, 0.418, 0.400]
+__C.DATASET.STD = [0.455, 0.450, 0.435]
 
 __C.DATASET.NUM_CLASSES = 15
 __C.DATASET.IGNORE_LABEL = 15
