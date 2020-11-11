@@ -257,6 +257,36 @@ class ConvBnRelu(nn.Module):
         return x
 
 
+class DeepPoolLayer(nn.Module):
+    def __init__(self, in_channels, out_channels, need_x2):
+        super(DeepPoolLayer, self).__init__()
+        self.pool_sizes = [2, 4, 8]
+        self.need_x2 = need_x2
+        pools, convs = [], []
+        for sz in self.pool_sizes:
+            pools.append(nn.AvgPool2d(kernel_size=sz, stride=sz))
+            convs.append(nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1, bias=False))
+        self.pools = nn.ModuleList(pools)
+        self.convs = nn.ModuleList(convs)
+        self.relu = nn.ReLU(inplace=True)
+        self.bn = nn.BatchNorm2d(in_channels)
+        self.conv_sum = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False)
+
+    def forward(self, x):
+        x_size = x.size()
+        resl = x
+        for i in range(len(self.pool_sizes)):
+            y = self.convs[i](self.pools[i](x))
+            resl= torch.add(resl, F.interpolate(y, x_size[2:], mode="bilinear", align_corners=False))
+        resl = self.bn(resl)
+        resl = self.relu(resl)
+        if self.need_x2:
+            resl = F.interpolate(resl, scale_factor=2, mode="bilinear", align_corners=False)
+
+        resl = self.conv_sum(resl)
+        return resl
+
+
 def BNReLU(ch):
     return nn.Sequential(
         Norm2d(ch),

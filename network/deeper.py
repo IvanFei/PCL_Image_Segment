@@ -2,7 +2,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-from network.extra_modules import get_aspp, get_trunk, ConvBnRelu, mask_attn_head
+from network.extra_modules import get_aspp, get_trunk, ConvBnRelu, mask_attn_head, DeepPoolLayer
 from network.utils import scale_as, fmt_scale
 
 
@@ -208,6 +208,64 @@ class MscaleDeeperS8(nn.Module):
         self.load_state_dict(new_state_dict)
 
 
+class DeeperPoolS8(nn.Module):
+    """DeeperS8 with Poolnet module.
+    """
+    def __init__(self, num_classes, trunk="xception71", criterion=None, dpc=False):
+        super(DeeperPoolS8, self).__init__()
+
+        self.criterion = criterion
+        self.backbone, s2_ch, s4_ch, high_level_ch = get_trunk(trunk_name=trunk, output_stride=8, pretrained=True)
+        # TODO: DPC modules
+        self.aspp, aspp_out_ch = get_aspp(high_level_ch, bottleneck_ch=256, output_stride=8, dpc=dpc)
+
+        self.convs2 = nn.Conv2d(s2_ch, 64, kernel_size=1, bias=False)
+        self.convs4 = nn.Conv2d(s4_ch, 128, kernel_size=1, bias=False)
+
+        self.convs8 = nn.Conv2d(high_level_ch, 512, kernel_size=1, bias=False)
+        self.pool1 = DeepPoolLayer(512, 256, need_x2=True)
+        self.pool2 = DeepPoolLayer(256, 256, need_x2=True)
+        self.pool3 = DeepPoolLayer(256, 256, need_x2=False)
+
+        self.conv_aspp = nn.Conv2d(aspp_out_ch, 128, kernel_size=3, padding=1, stride=1, bias=False)
+        self.conv_up1 = ConvBnRelu(128 + 128 + 256, 256, kernel_size=3, padding=1, stride=1)
+        self.conv_up3 = ConvBnRelu(128 + 64 + 256, 256, kernel_size=3, padding=1, stride=1)
+        self.conv_up5 = nn.Conv2d(256, num_classes, kernel_size=1, bias=False)
+
+    def forward(self, inputs):
+        if isinstance(inputs, dict):
+            x = inputs['images']
+        else:
+            x = inputs
+
+        s2_features, s4_features, final_features = self.backbone(x)
+        s2_features = self.convs2(s2_features)
+        s4_features = self.convs4(s4_features)
+        aspp = self.aspp(final_features)
+        aspp = self.conv_aspp(aspp)
+        x = self.convs8(final_features)
+        x = self.pool1(x)
+        aspp = F.interpolate(aspp, scale_factor=2, mode="bilinear", align_corners=False)
+        x = torch.cat([x, aspp, s4_features], 1)
+        x = self.conv_up1(x)
+        x = self.pool2(x)
+
+        aspp = F.interpolate(aspp, scale_factor=2, mode="bilinear", align_corners=False)
+        x = torch.cat([x, aspp, s2_features], 1)
+        x = self.conv_up3(x)
+        x = self.pool3(x)
+        x = self.conv_up5(x)
+        x = F.interpolate(x, scale_factor=2, mode="bilinear", align_corners=False)
+
+        if self.training:
+            assert 'gts' in inputs
+            gts = inputs['gts']
+            return self.criterion(x, gts)
+        else:
+            return {"pred": x}
+            # return x
+
+
 def DeeperX71(num_classes, criterion=None):
 
     return DeeperS8(num_classes, criterion=criterion, trunk="xception71")
@@ -232,14 +290,19 @@ def DeeperX71_DPC_Mscale(num_classes, criterion=None):
     return MscaleDeeperS8(num_classes, criterion=criterion, trunk="xception71", dpc=True)
 
 
+def DeeperX71_ASPP_Pool(num_classes, criterion=None):
+
+    return DeeperPoolS8(num_classes, criterion=criterion, trunk="xception71")
+
+
 if __name__ == '__main__':
-    model = DeeperX71_ASPP_Mscale(num_classes=15)
-
+    model = DeeperPoolS8(num_classes=15)
+    torch.save(model.state_dict(), "/nfs/users/huangfeifei/PCL_Image_Segment/test.pth")
     print(model.state_dict().keys())
-
-    weight_pth = "/nfs/users/huangfeifei/PCL_Image_Segment/final_logs/DeeperX71_ASPP_CE_Adam/model-step-300999.pth"
-    state_dict = torch.load(weight_pth)["state_dict"]
-    print(state_dict.keys())
-    model.load_state_dict(state_dict, strict=False)
+    #
+    # weight_pth = "/nfs/users/huangfeifei/PCL_Image_Segment/final_logs/DeeperX71_ASPP_CE_Adam/model-step-300999.pth"
+    # state_dict = torch.load(weight_pth)["state_dict"]
+    # print(state_dict.keys())
+    # model.load_state_dict(state_dict, strict=False)
 
 
