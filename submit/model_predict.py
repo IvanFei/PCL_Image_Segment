@@ -63,6 +63,36 @@ def cut_image_new(img, w, h, overlap=32):
     return imgs, axis_list
 
 
+def cut_placehold(img, w, h, patch_size=384, overlap=160):
+    imgs = [img]
+    axis_list = [(0, 0)]
+
+    return imgs, axis_list
+
+
+def cut_image_v2(img, w, h, patch_size=384, overlap=160):
+    imgs = []
+    size_per_img = patch_size - overlap
+    num_patchs = math.ceil(w / size_per_img)
+    inter_per_patch = size_per_img
+    idxs = []
+    for i in range(num_patchs):
+        idx = i * inter_per_patch
+        idx = min(idx, w - patch_size)
+        idxs.append(idx)
+
+    axis_list = []
+    for r_idx in idxs:
+        for c_idx in idxs:
+            axis_list.append((r_idx, c_idx))
+            # ugly coding
+            t_img = img[:, r_idx:r_idx+patch_size, c_idx:c_idx+patch_size].unsqueeze(dim=0)
+            t_img = F.interpolate(t_img, size=(256, 256), mode="bilinear").squeeze(dim=0)
+            imgs.append(t_img)
+
+    return imgs, axis_list
+
+
 def write_mask(mask, img_name, output_dir):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -100,22 +130,34 @@ def predict(model, input_path, output_dir):
     # TODO: cut the img to 256 x 256
     batch_size = 16
 
-    # plan A: no resize and cut with 256 x 256 including overlap
+    # TODO plan A: no resize and cut with 256 x 256 including overlap
     # img = Image.fromarray(img.astype(np.uint8))
     # img = img_transform(img)
     # cw, ch = w, h
     # imgs, axis_list = cut_image(img, w, h)
 
-    # plan B: resize with 32 x 32 and cut with 256 x 256  including overlap
+    # TODO plan B: resize with 32 x 32 and cut with 256 x 256  including overlap
     # resize
+    # cw, ch = get_size(w, h, divisor=32)
+    # img_resize = cv2.resize(img, (cw, ch), interpolation=cv2.INTER_LINEAR)
+    # img = Image.fromarray(img_resize.astype(np.uint8))
+    # img = img_transform(img)
+    # if cw <= 384:
+    #     imgs, axis_list = cut_image(img, cw, ch)
+    # else:
+    #     imgs, axis_list = cut_image_new(img, cw, ch, overlap=32)
+
+    # TODO plan C: resize with 32 x 32 and cut with patch_size including overlap
     cw, ch = get_size(w, h, divisor=32)
     img_resize = cv2.resize(img, (cw, ch), interpolation=cv2.INTER_LINEAR)
     img = Image.fromarray(img_resize.astype(np.uint8))
     img = img_transform(img)
     if cw <= 384:
+        patch_size, overlap = 256, None
         imgs, axis_list = cut_image(img, cw, ch)
     else:
-        imgs, axis_list = cut_image_new(img, cw, ch, overlap=32)
+        patch_size, overlap = 384, 160
+        imgs, axis_list = cut_image_v2(img, cw, ch, patch_size=patch_size, overlap=overlap)
 
     num_imgs = len(imgs)
     num_epochs = math.ceil(num_imgs / batch_size)
@@ -138,11 +180,13 @@ def predict(model, input_path, output_dir):
 
         preds = preds["pred"]
         probs = torch.softmax(preds, dim=1)
+        probs = F.interpolate(probs, size=(patch_size, patch_size), mode="bilinear")
         probs = probs.cpu().numpy()
+
         for idx, ax in enumerate(img_axis_list):
             y, x = ax
-            result[:, y:y+256, x:x+256] += probs[idx]
-            counter[:, y:y+256, x:x+256] += 1
+            result[:, y:y+patch_size, x:x+patch_size] += probs[idx]
+            counter[:, y:y+patch_size, x:x+patch_size] += 1
 
     result = result / counter
     result = np.argmax(result, axis=0)
@@ -153,7 +197,7 @@ def predict(model, input_path, output_dir):
 
 
 # if __name__ == '__main__':
-#     os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+#     os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 #     img_dir = "/nfs/users/huangfeifei/dataset/remote_sensing/test_multi_scale/image"
 #     img_paths = glob.glob(img_dir + '/' + '*')  # 后台存储的测试集图片路径
 #     print("[*] image len: {}".format(len(img_paths)))

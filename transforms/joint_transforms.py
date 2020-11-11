@@ -246,13 +246,11 @@ class CenterCropPad(object):
         return img.crop((x1, y1, x1 + tw, y1 + th)), mask.crop((x1, y1, x1 + tw, y1 + th))
 
 
-
 class PadImage(object):
     def __init__(self, size):
         self.size = size
         self.ignore_index = cfg.DATASET.IGNORE_LABEL
 
-        
     def __call__(self, img, mask):
         assert img.size == mask.size
         th, tw = self.size, self.size
@@ -260,7 +258,7 @@ class PadImage(object):
         
         w, h = img.size
         
-        if w > tw or h > th :
+        if w > tw or h > th:
             wpercent = (tw/float(w))    
             target_h = int((float(img.size[1])*float(wpercent)))
             img, mask = img.resize((tw, target_h), Image.BICUBIC), mask.resize((tw, target_h), Image.NEAREST)
@@ -295,15 +293,20 @@ class RandomRotate90(object):
 
 
 class RandomZoomIn(object):
-    def __init__(self, sizes=[256, 288, 320], p=0.5):
+    def __init__(self, sizes=[256, 288, 320], out_size=256, p=0.5):
         self.sizes = sizes
+        self.out_size = out_size
         self.p = p
+        self.random_crop = RandomCropping(size=self.out_size)
 
     def __call__(self, img, mask):
         if random.uniform(0, 1) < 0.5:
             idx = random.randint(0, len(self.sizes) - 1)
             size = self.sizes[idx]
-            return img.resize((size, size), Image.BICUBIC), mask.resize((size, size), Image.NEAREST)
+            img, mask = img.resize((size, size), Image.BICUBIC), mask.resize((size, size), Image.NEAREST)
+            img, mask = self.random_crop(img, mask)
+
+        return img, mask
 
 
 class RandomCropping(object):

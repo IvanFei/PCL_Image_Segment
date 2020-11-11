@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # TODO poly train schedule
 
 #python train.py --model_name DeeperX71_ASPP_CE_Adam_Cleaner_Poly --batch_size 16 \
@@ -13,7 +14,19 @@
 
 
 # TODO rmi loss exp
-python train.py --model_name DeeperX71_ASPP_RMILoss_Adam_Cleaner --batch_size 16 \
-    --optim adam --lr 0.0001 --arch deeper.DeeperX71 --loss_type rmi \
+#python train.py --model_name DeeperX71_ASPP_RMILoss_Adam_Cleaner --batch_size 16 \
+#    --optim adam --lr 0.0001 --arch deeper.DeeperX71 --loss_type rmi \
+#    --load_path final_logs/DeeperX71_ASPP_CE_Adam/model-step-300999.pth \
+#    --val_freq 1000 --data_filter --retrain
+
+# TODO new mean and std
+python train.py --model_name DeeperX71_ASPP_CE_Adam_MeanStd --batch_size 16 \
+    --optim adam --lr 0.0001 --arch deeper.DeeperX71 --loss_type ce \
+    --val_freq 1000
+
+
+# TODO new transform
+python train.py --model_name deeperX71_ASPP_CE_Adam_Poly --batch_size 16 \
+    --optim adam --lr 0.00005 --arch deeper.DeeperX71 --loss_type ce \
     --load_path final_logs/DeeperX71_ASPP_CE_Adam/model-step-300999.pth \
-    --val_freq 1000 --data_filter --retrain
+    --lr_schedule poly --poly_exp 2 --retrain

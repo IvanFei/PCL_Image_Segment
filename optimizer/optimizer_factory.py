@@ -17,7 +17,7 @@ def get_optimizer(args, net):
     """
 
     def poly_schd(epoch):
-        return math.pow(1 - epoch / args.num_epochs, args.poly_exp)
+        return math.pow(1 - epoch / args.num_steps, args.poly_exp)
 
     param_groups = net.parameters()
 

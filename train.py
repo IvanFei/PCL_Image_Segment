@@ -66,7 +66,7 @@ def get_args():
     train.add_argument("--batch_size", type=int, default=16)
     train.add_argument("--log_step", type=int, default=50)
     train.add_argument("--num_epochs", type=int, default=200)
-    train.add_argument("--num_steps", type=int, default=3e5)  # for lr schedule
+    train.add_argument("--num_steps", type=int, default=8e2)  # for lr schedule
     train.add_argument("--val_freq", type=int, default=1000)
     train.add_argument("-r", "--retrain", action="store_true")
 
@@ -140,7 +140,7 @@ def main(args):
             train_loader.dataset.build_epoch()
 
 
-def train(args, train_loader, val_loader, model, val_criterion, optimizer, lr_schedule, epoch, step, tb, max_score, cuda=False):
+def train(args, train_loader, val_loader, model, val_criterion, optimizer, lr_scheduler, epoch, step, tb, max_score, cuda=False):
     """
     Runs the training loop per epoch.
     dataloader: Data loader for train
@@ -193,7 +193,11 @@ def train(args, train_loader, val_loader, model, val_criterion, optimizer, lr_sc
 
             logger.info(f"[*] Step: {step}, max_score: {max_score}.")
 
-            lr_schedule.step(val_scores["FWIOU"])
+            if args.lr_schedule == "reduce_lr_on_plateau":
+                lr_scheduler.step(val_scores["FWIOU"])
+            else:
+                lr_scheduler.step()
+
             args.lr = get_learning_rate(optimizer)[0]
 
             state_dict = {

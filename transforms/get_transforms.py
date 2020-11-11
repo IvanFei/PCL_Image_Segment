@@ -20,11 +20,12 @@ def get_transforms(args, mode="train"):
         # TODO add another joint transforms
         joint_transform_list += [joint_transforms.RandomHorizontallyFlip()]  # default percent is 0.5
         joint_transform_list += [joint_transforms.RandomRotate90(p=0.5)]
+        joint_transform_list += [joint_transforms.RandomZoomIn(sizes=[256, 288, 320], out_size=256, p=0.5)]
 
         # image transform
         input_transform = []
-        # input_transform += [extended_transforms.ColorJitter(brightness=0.25, contrast=0,
-        #                                                     saturation=0, hue=0, p=0.5)]
+        input_transform += [extended_transforms.ColorJitter(brightness=0.25, contrast=0.10,
+                                                            saturation=0, hue=0, p=0.5)]
         # input_transform += [extended_transforms.RandomGaussianBlur(p=0.5)]
 
         mean_std = (cfg.DATASET.MEAN, cfg.DATASET.STD)
