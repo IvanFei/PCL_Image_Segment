@@ -317,7 +317,8 @@ class RandomCropping(object):
         h_start, w_start = random.uniform(0, 1), random.uniform(0, 1)
         height, width = img.size[:2]
         x1, y1, x2, y2 = self.get_random_crop_coords(height, width, self.size, self.size, h_start, w_start)
-        img, mask = img[y1:y2, x1:x2], mask[y1:y2, x1:x2]
+        # img, mask = img[y1:y2, x1:x2], mask[y1:y2, x1:x2]
+        img, mask = img.crop((x1, y1, x2, y2)), mask.crop((x1, y1, x2, y2))
         return img, mask
 
     @staticmethod
