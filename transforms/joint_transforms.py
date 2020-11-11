@@ -299,7 +299,7 @@ class RandomZoomIn(object):
         self.p = p
         self.random_crop = RandomCropping(size=self.out_size)
 
-    def __call__(self, img, mask):
+    def __call__(self, img, mask, centroid=None):
         if random.uniform(0, 1) < 0.5:
             idx = random.randint(0, len(self.sizes) - 1)
             size = self.sizes[idx]
