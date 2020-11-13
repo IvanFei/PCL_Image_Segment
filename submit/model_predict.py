@@ -138,26 +138,27 @@ def predict(model, input_path, output_dir):
 
     # TODO plan B: resize with 32 x 32 and cut with 256 x 256  including overlap
     # resize
+    patch_size, overlap = 256, 64
+    cw, ch = get_size(w, h, divisor=32)
+    img_resize = cv2.resize(img, (cw, ch), interpolation=cv2.INTER_CUBIC)
+    img = Image.fromarray(img_resize.astype(np.uint8))
+    img = img_transform(img)
+    if cw <= 288:
+        imgs, axis_list = cut_image(img, cw, ch)
+    else:
+        imgs, axis_list = cut_image_new(img, cw, ch, overlap=overlap)
+
+    # TODO plan C: resize with 32 x 32 and cut with patch_size including overlap
     # cw, ch = get_size(w, h, divisor=32)
     # img_resize = cv2.resize(img, (cw, ch), interpolation=cv2.INTER_LINEAR)
     # img = Image.fromarray(img_resize.astype(np.uint8))
     # img = img_transform(img)
     # if cw <= 384:
+    #     patch_size, overlap = 256, None
     #     imgs, axis_list = cut_image(img, cw, ch)
     # else:
-    #     imgs, axis_list = cut_image_new(img, cw, ch, overlap=32)
-
-    # TODO plan C: resize with 32 x 32 and cut with patch_size including overlap
-    cw, ch = get_size(w, h, divisor=32)
-    img_resize = cv2.resize(img, (cw, ch), interpolation=cv2.INTER_LINEAR)
-    img = Image.fromarray(img_resize.astype(np.uint8))
-    img = img_transform(img)
-    if cw <= 384:
-        patch_size, overlap = 256, None
-        imgs, axis_list = cut_image(img, cw, ch)
-    else:
-        patch_size, overlap = 384, 160
-        imgs, axis_list = cut_image_v2(img, cw, ch, patch_size=patch_size, overlap=overlap)
+    #     patch_size, overlap = 384, 160
+    #     imgs, axis_list = cut_image_v2(img, cw, ch, patch_size=patch_size, overlap=overlap)
 
     num_imgs = len(imgs)
     num_epochs = math.ceil(num_imgs / batch_size)
@@ -180,7 +181,8 @@ def predict(model, input_path, output_dir):
 
         preds = preds["pred"]
         probs = torch.softmax(preds, dim=1)
-        probs = F.interpolate(probs, size=(patch_size, patch_size), mode="bilinear")
+        if patch_size != 256:
+            probs = F.interpolate(probs, size=(patch_size, patch_size), mode="bilinear")
         probs = probs.cpu().numpy()
 
         for idx, ax in enumerate(img_axis_list):

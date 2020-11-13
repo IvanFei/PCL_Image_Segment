@@ -104,7 +104,7 @@ def test(args, dataloader, model, cuda=False):
 
 
 if __name__ == '__main__':
-    os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
     args = get_args()
     load_path = args.load_path
     mode = args.mode

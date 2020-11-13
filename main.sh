@@ -25,8 +25,13 @@
 #    --val_freq 1000
 
 
-# TODO new transform with poly and ce
-python train.py --model_name deeperX71_ASPP_CE_Adam_Cleaner_Poly2 --batch_size 16 \
-    --optim adam --lr 0.00005 --arch deeper.DeeperX71 --loss_type ce \
-    --load_path final_logs/DeeperX71_ASPP_CE_Adam_Cleaner_Poly/model-step-340999.pth \
-    --lr_schedule poly --poly_exp 2 --retrain --data_filter
+## TODO new transform with poly and ce
+#python train.py --model_name deeperX71_ASPP_CE_Adam_Cleaner_Poly2 --batch_size 16 \
+#    --optim adam --lr 0.00005 --arch deeper.DeeperX71 --loss_type ce \
+#    --load_path final_logs/DeeperX71_ASPP_CE_Adam_Cleaner_Poly/model-step-340999.pth \
+#    --lr_schedule poly --poly_exp 2 --retrain --data_filter
+
+
+#
+python train.py --model_name deeperX71_ASPP_Pool_CE_Adam --batch_size 16 \
+    --optim adam --lr 0.0001 --arch deeper.DeeperX71_ASPP_Pool --loss_type ce
