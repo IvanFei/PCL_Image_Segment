@@ -58,6 +58,8 @@ def get_args():
     schedule.add_argument("--step_size", type=int, default=30)
     schedule.add_argument("--gamma", type=float, default=0.1)
     schedule.add_argument("--poly_exp", type=float, default=2)
+    schedule.add_argument("--min_lr", type=float, default=1e-5)
+    schedule.add_argument("--T_max", type=int, default=30)
 
     loss = parser.add_argument_group("Loss")
     loss.add_argument("--loss_type", type=str, default="ce")

@@ -56,6 +56,10 @@ def get_optimizer(args, net):
         scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=poly_schd)
         logger.info(f"[*] Using `Poly` LR Scheduler with poly {args.poly_exp}")
 
+    elif args.lr_schedule == "CosineAnnealingLR":
+
+        scheduler = lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.T_max, eta_min=args.min_lr)
+        logger.info(f"[*] Using `CosineAnnealingLR` LR Scheduler with T_max: {args.T_max}, eta_min: {args.min_lr}")
     else:
         raise NotImplementedError
 
