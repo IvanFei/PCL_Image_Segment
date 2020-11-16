@@ -32,6 +32,21 @@
 #    --lr_schedule poly --poly_exp 2 --retrain --data_filter
 
 
-#
-python train.py --model_name deeperX71_ASPP_Pool_CE_Adam --batch_size 16 \
-    --optim adam --lr 0.0001 --arch deeper.DeeperX71_ASPP_Pool --loss_type ce
+##
+#python train.py --model_name deeperX71_ASPP_Pool_CE_Adam --batch_size 16 \
+#    --optim adam --lr 0.0001 --arch deeper.DeeperX71_ASPP_Pool --loss_type ce
+
+##
+#python train.py --model_name deeperX71_ASPP_CE_SGD_Cosine --batch_size 16 \
+#    --optim sgd --lr 0.001 --arch deeper.DeeperX71 --loss_type ce \
+#    --load_path final_logs/DeeperX71_ASPP_CE_Adam_Cleaner_Poly/model-step-340999.pth \
+#    --lr_schedule CosineAnnealingLR --val_freq 5000 --retrain
+
+##
+python train.py --model_name deeperX71_ASPP_CE_SGD_Cosine --batch_size 16 \
+    --optim sgd --lr 0.001 --arch deeper.DeeperX71 --loss_type ce \
+    --load_path final_logs/DeeperX71_ASPP_CE_Adam_Cleaner_Poly/model-step-340999.pth \
+    --lr_schedule CosineAnnealingLR --val_freq 5000 --retrain --data_filter
+
+
+
