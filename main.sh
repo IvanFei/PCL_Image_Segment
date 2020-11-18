@@ -43,7 +43,7 @@
 #    --lr_schedule CosineAnnealingLR --val_freq 5000 --retrain
 
 ##
-python train.py --model_name deeperX71_ASPP_CE_SGD_Cosine --batch_size 16 \
+python train.py --model_name deeperX71_ASPP_CE_SGD_Cosine_Cleaner --batch_size 16 \
     --optim sgd --lr 0.001 --arch deeper.DeeperX71 --loss_type ce \
     --load_path final_logs/DeeperX71_ASPP_CE_Adam_Cleaner_Poly/model-step-340999.pth \
     --lr_schedule CosineAnnealingLR --val_freq 5000 --retrain --data_filter

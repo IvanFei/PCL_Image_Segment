@@ -153,11 +153,11 @@ def predict(model, input_path, output_dir):
     # img_resize = cv2.resize(img, (cw, ch), interpolation=cv2.INTER_LINEAR)
     # img = Image.fromarray(img_resize.astype(np.uint8))
     # img = img_transform(img)
-    # if cw <= 384:
+    # if cw <= 288:
     #     patch_size, overlap = 256, None
     #     imgs, axis_list = cut_image(img, cw, ch)
     # else:
-    #     patch_size, overlap = 384, 160
+    #     patch_size, overlap = 224, 32
     #     imgs, axis_list = cut_image_v2(img, cw, ch, patch_size=patch_size, overlap=overlap)
 
     num_imgs = len(imgs)
@@ -199,7 +199,7 @@ def predict(model, input_path, output_dir):
 
 
 # if __name__ == '__main__':
-#     os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+#     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 #     img_dir = "/nfs/users/huangfeifei/dataset/remote_sensing/test_multi_scale/image"
 #     img_paths = glob.glob(img_dir + '/' + '*')  # 后台存储的测试集图片路径
 #     print("[*] image len: {}".format(len(img_paths)))

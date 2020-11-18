@@ -22,10 +22,11 @@ from train import validation
 
 
 ROOT_DIR = "/nfs/users/huangfeifei/PCL_Image_Segment"
+LOG_DIR = "final_logs"
 
 
 def get_checkpoints(config, num_checkpoints=5):
-    checkpoint_dir = os.path.join(ROOT_DIR, "logs", os.path.basename(config.model_dir))
+    checkpoint_dir = os.path.join(ROOT_DIR, LOG_DIR, os.path.basename(config.model_dir))
     checkpoints = glob.glob(os.path.join(checkpoint_dir, "*.pth"))
 
     checkpoints.sort()
@@ -68,7 +69,7 @@ def run(config, num_checkpoints, cuda=False):
 
     output_name = "model-swa.pth"
     print(f"[*] SAVED: to {output_name}")
-    checkpoint_dir = os.path.join(ROOT_DIR, "logs", os.path.basename(config.model_dir))
+    checkpoint_dir = os.path.join(ROOT_DIR, LOG_DIR, os.path.basename(config.model_dir))
     util_checkpoint.save_checkpoint(checkpoint_dir, output_name, model)
 
     # test the model
@@ -81,7 +82,7 @@ def run(config, num_checkpoints, cuda=False):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--cfg_path", type=str,
-                        default="/nfs/users/huangfeifei/PCL_Image_Segment/logs/DeeperX71_RMILoss/params.json")
+                        default="/nfs/users/huangfeifei/PCL_Image_Segment/final_logs/DeeperX71_ASPP_CE_Adam_Cleaner_Poly/params.json")
     parser.add_argument("--num_checkpoints", type=int, default=5)
     parser.add_argument("--cuda", type=bool, default=True)
 
@@ -100,7 +101,7 @@ def main():
 
 
 if __name__ == '__main__':
-    # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "2"
     main()
 
 
